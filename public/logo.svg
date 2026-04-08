@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <rect width="200" height="200" fill="#4472C4"/>
+  <text x="100" y="110" font-family="Arial, sans-serif" font-size="80" font-weight="bold" text-anchor="middle" fill="white">GI</text>
+  <text x="100" y="165" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="white">Gantt Interno</text>
+</svg>

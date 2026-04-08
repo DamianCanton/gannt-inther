@@ -1,0 +1,47 @@
+# Tasks: Roadmap Phase 4 Print View Closure
+
+## Critical Path & Dependencies
+- Phase 1 -> Phase 2 -> Phase 3 -> Phase 4 -> Phase 5.
+- Timeline contract (1) blocks print table parity (2), which blocks print reliability/states (3), which blocks CSS/E2E hardening (4/5).
+
+## Phase 1: Shared Contract Foundation (Critical Path)
+- [x] 1.1 Update `components/gantt/timeline-utils.ts` to keep `deriveTimelineScale`/`buildTimelineColumns` as canonical contract (`<60` daily, `>=60` weekly) and document boundary invariants. [Spec: Shared Timeline Daily/Weekly] [Design D2]
+- [x] 1.2 Add/extend unit tests in timeline util test file for 59/60 boundary and weekly grouping alignment from `obraStartDate`. [Verify: boundary parity] [Spec: Verify boundaries]
+- [x] 1.3 Refactor `components/gantt/print-timeline-table.tsx` to consume shared contract only (remove local scale/date branching). [Spec: Shared contract] [Design D2]
+- **Verification hook**: run timeline unit tests and confirm print table receives same scale/columns shape as interactive.
+
+## Phase 2: Export UX Entrypoint (Critical Path)
+- [x] 2.1 Modify `components/gantt/gantt-interactive.tsx` header/toolbar to expose visible `Exportar PDF/Imprimir` CTA (no hidden menu). [Spec: Entrypoint visibility] [Design D1]
+- [x] 2.2 Ensure CTA opens `/obra/[id]/print` preserving obra context; adjust `app/(routes)/obra/[id]/page.tsx` props/wiring if needed. [Spec: opens print route, no mutation]
+- [x] 2.3 Add integration assertion in `app/(routes)/obra/[id]/__tests__/schedule-mapping.integration.test.tsx` (or nearest route test) for CTA discoverability + correct href. [Verify: export CTA]
+- **Verification hook**: route-level test confirms CTA exists, target URL matches obra id, interactive state untouched.
+
+## Phase 3: Print Route Reliability & States (Critical Path)
+- [x] 3.1 Create `components/gantt/print-client-controls.tsx` with render-ready auto-print once (`readySelector`, timeout) and manual `Imprimir ahora` fallback. [Spec: auto + fallback] [Design D3]
+- [x] 3.2 Update `app/(routes)/obra/[id]/print/page.tsx` to remove fixed-delay script, compose print table + client controls, and sanitize error output. [Spec: user-safe error] [Design D3/D4]
+- [x] 3.3 Create `app/(routes)/obra/[id]/print/loading.tsx` and `error.tsx` with print-safe loading/retry/back UX; keep auth guard behavior unchanged. [Spec: loading/error + protected access]
+- [x] 3.4 Add explicit empty-state rendering path in `components/gantt/print-timeline-table.tsx` for no printable rows. [Spec: empty state]
+- **Verification hook**: integration tests validate unauth redirect, unauthorized notFound-equivalent, loading/error/empty states, and no internal stack details.
+
+## Phase 4: CSS Print Fidelity Hardening
+- [x] 4.1 Update `app/globals.css` print rules for A4 landscape, print color adjust, readable timeline cell sizing, and sticky-header continuation semantics. [Spec: A4 fidelity] [Design file changes]
+- [x] 4.2 Enforce pagination safety (`break-inside`/table row guards) so rows do not split mid-row across pages. [Spec: pagination-safe rows]
+- [x] 4.3 Verify `no-print` controls are hidden in paper output while table/header remain readable. [Design print controls]
+- **Verification hook**: print preview/manual QA checklist passes A4 orientation, color readability, and row/page-break safety.
+
+## Phase 5: End-to-End Verification & Closure
+- [x] 5.1 Extend `app/(routes)/obra/[id]/print/__tests__/print-page.integration.test.tsx` for controls presence, sanitized errors, and shared contract consumption assertions. [Spec: route safety + parity]
+- [x] 5.2 Update `e2e/auth-print-smoke.spec.ts` for journey `/obra/[id]` -> CTA -> `/print`, single auto-trigger expectation, manual fallback visibility when dialog blocked. [Spec: reliability + entrypoint]
+- [x] 5.3 Execute targeted test commands (unit/integration/e2e smoke) and record pass/fail against all “Acceptance Scenarios for Verify”. [Spec: Verify section]
+- **Verification hook**: acceptance matrix complete with scenario-to-test mapping and zero unresolved critical failures.
+
+## Execution Notes
+- Applied additional hardening for verify blockers:
+  - Playwright browsers installed successfully with `npx playwright install`.
+  - `e2e/auth-print-smoke.spec.ts` now validates CTA click navigation, runtime print CSS contract checks (A4 landscape + pagination-safe selector), and manual fallback click invoking `window.print()`.
+  - `components/gantt/__tests__/print-client-controls.test.tsx` now explicitly asserts fallback click invokes `window.print()`.
+- Validation status in this environment:
+  - `type-check` ✅
+  - `lint` ✅
+  - targeted Vitest print suite ✅
+  - Playwright smoke command executes, but test is **skipped** due missing `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`, and `E2E_OBRA_ID`.

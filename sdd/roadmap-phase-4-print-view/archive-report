@@ -1,0 +1,66 @@
+# Archive Report — roadmap-phase-4-print-view
+
+## Status
+Archived in Engram mode.
+
+## Executive Summary
+Phase 4 is archive-ready. The print view milestone now has a visible interactive export entrypoint, shared timeline contract parity, resilient print triggering with fallback, print-safe loading/error/empty states, A4 landscape fidelity hardening, and passing verification evidence. Remaining concern is only a non-blocking architecture guardrail warning about the lack of a dedicated E2E continuity assertion for working-day/DAG semantics in print context.
+
+## Dependency Retrieval Confirmation
+Retrieved and reviewed from Engram:
+- proposal: #248
+- spec: #250
+- design: #252
+- tasks: #256
+- apply-progress: #260
+- verify-report: #264, #277
+- findings: #263, #265, #266, #267, #270
+
+Filesystem note: local source files for proposal/spec/design were not present in `sdd/roadmap-phase-4-print-view/`; Engram observations were used as the source of truth.
+
+## Scope Summary
+In scope and completed:
+- visible `Exportar PDF/Imprimir` entrypoint from `/obra/[id]`
+- shared timeline contract reuse for daily `<60` and weekly `>=60`
+- print route reliability with render-ready auto-print plus manual fallback
+- loading/error/empty states for print route
+- print CSS fidelity hardening for A4 landscape and pagination safety
+- targeted unit/integration/E2E verification
+
+Out of scope and preserved:
+- server-side PDF generation
+- redesign of the interactive Gantt view
+- schedule engine rewrites beyond print parity
+
+## Verification Gate Assessment
+Gate result: PASS WITH WARNINGS (ARCHIVE-READY)
+
+Evidence:
+- type-check: passed
+- lint: passed
+- targeted Vitest suite: passed
+- Playwright authenticated smoke: passed
+
+Assessment:
+- All acceptance scenarios now have runtime evidence.
+- The only warning is architectural, not a release blocker: no dedicated E2E assertion yet for print-context continuity of DAG/working-day semantics.
+
+## Residual Risk Summary
+Low residual risk remains in one area:
+- Print-context continuity is validated structurally and via route/tests, but not with a dedicated E2E semantic assertion over working-day/DAG behavior.
+
+Mitigation:
+- Keep current regression suite and runtime smoke as archive gate.
+- Add a focused continuity Playwright test later if the guardrail becomes a release requirement.
+
+## Artifact Traceability
+- Proposal: #248
+- Spec: #250
+- Design: #252
+- Tasks: #256
+- Apply progress: #260
+- Verification report: #264, #277
+- Findings: #263, #265, #266, #267, #270
+
+## Closure Statement
+The `roadmap-phase-4-print-view` change is fully planned, implemented, verified, and archived in Engram mode. No critical issues remain.

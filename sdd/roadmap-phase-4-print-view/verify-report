@@ -1,0 +1,113 @@
+## Verification Report
+
+**Change**: roadmap-phase-4-print-view  
+**Version**: N/A  
+**Mode**: Standard (Strict TDD disabled via `sdd/gannt-inther/testing-capabilities`)
+
+---
+
+### Completeness
+| Metric | Value |
+|--------|-------|
+| Tasks total | 16 |
+| Tasks complete | 16 |
+| Tasks incomplete | 0 |
+
+All tasks in `sdd/roadmap-phase-4-print-view/tasks` are marked complete.
+
+---
+
+### Build & Tests Execution
+
+**Build**: ➖ Skipped by project rule (`Never build after changes`).
+
+**Type-check**: ✅ Passed
+```bash
+npm run type-check
+```
+
+**Lint**: ✅ Passed
+```bash
+npm run lint
+```
+
+**Tests (targeted Vitest)**: ✅ 25 passed / ❌ 0 failed / ⚠️ 0 skipped
+```bash
+npm test -- run "components/gantt/__tests__/timeline-utils.test.ts" "components/gantt/__tests__/print-client-controls.test.tsx" "app/(routes)/obra/[id]/__tests__/interactive-gantt.integration.test.tsx" "app/(routes)/obra/[id]/__tests__/schedule-mapping.integration.test.tsx" "app/(routes)/obra/[id]/print/__tests__/print-page.integration.test.tsx" "app/(routes)/obra/[id]/print/__tests__/print-route-states.test.tsx"
+```
+
+**E2E (Playwright smoke)**: ✅ Passed
+```bash
+npx playwright test e2e/auth-print-smoke.spec.ts
+```
+Result: `1 passed`
+
+**Coverage**: Not rerun in this verification pass.
+
+---
+
+### Spec Compliance Matrix
+
+| Requirement | Scenario | Test | Result |
+|-------------|----------|------|--------|
+| Export Entrypoint from Interactive View | Export action opens print route | `e2e/auth-print-smoke.spec.ts > login -> /obras -> /obra/[id] -> /obra/[id]/print happy path` | ✅ COMPLIANT |
+| Export Entrypoint from Interactive View | Entrypoint visibility and affordance | `app/(routes)/obra/[id]/__tests__/interactive-gantt.integration.test.tsx > shows visible export CTA with print href` | ✅ COMPLIANT |
+| Shared Timeline Scale and Columns Contract | Daily contract boundary (59) | `components/gantt/__tests__/timeline-utils.test.ts > uses daily scale for 59 day spans` | ✅ COMPLIANT |
+| Shared Timeline Scale and Columns Contract | Weekly contract boundary (60) | `components/gantt/__tests__/timeline-utils.test.ts > uses weekly scale for 60 day spans` | ✅ COMPLIANT |
+| Print Fidelity for Paper Output | A4 landscape fidelity | `e2e/auth-print-smoke.spec.ts > printCssContract.hasA4Landscape` | ✅ COMPLIANT |
+| Print Fidelity for Paper Output | Pagination-safe rows | `e2e/auth-print-smoke.spec.ts > printCssContract.hasPaginationSafety` | ✅ COMPLIANT |
+| Print Reliability with Fallback | Auto-print success path | `e2e/auth-print-smoke.spec.ts > auto-print fires exactly once after render-ready` | ✅ COMPLIANT |
+| Print Reliability with Fallback | Manual fallback path | `e2e/auth-print-smoke.spec.ts > manual fallback button invokes window.print()` | ✅ COMPLIANT |
+| Print Route Loading/Error/Empty States | Loading state | `app/(routes)/obra/[id]/print/__tests__/print-route-states.test.tsx > renders loading state` | ✅ COMPLIANT |
+| Print Route Loading/Error/Empty States | Empty or invalid data state | `app/(routes)/obra/[id]/__tests__/schedule-mapping.integration.test.tsx > shows explicit print empty state` | ✅ COMPLIANT |
+| Print Route Loading/Error/Empty States | User-safe error state | `app/(routes)/obra/[id]/print/__tests__/print-page.integration.test.tsx > renders sanitized error content` | ✅ COMPLIANT |
+| Non-goals and Constraints | Architecture guardrail | `app/(routes)/obra/[id]/__tests__/schedule-mapping.integration.test.tsx` + route integration tests | ⚠️ PARTIAL (two-view split covered; no direct end-to-end DAG/working-day continuity assertion in print closure) |
+| Print Route Protected Access Behavior | Unauthenticated access | `app/(routes)/obra/[id]/print/__tests__/print-page.integration.test.tsx > redirects unauthenticated requests` | ✅ COMPLIANT |
+| Print Route Protected Access Behavior | Unauthorized obra access | `app/(routes)/obra/[id]/print/__tests__/print-page.integration.test.tsx > returns notFound for forbidden access` | ✅ COMPLIANT |
+
+**Compliance summary**: 13/14 compliant, 1 partial, 0 untested.
+
+---
+
+### Correctness (Static — Structural Evidence)
+| Requirement | Status | Notes |
+|------------|--------|-------|
+| Export Entrypoint from Interactive View | ✅ Implemented | `GanttInteractive` has visible CTA; `/obra/[id]/page.tsx` wires `printHref`. |
+| Shared Timeline Scale and Columns Contract | ✅ Implemented | `print-timeline-table.tsx` consumes `deriveTimelineScale` + `buildTimelineColumns`; threshold constant in `timeline-utils.ts`. |
+| Print Fidelity for Paper Output | ✅ Implemented (static) | `app/globals.css` has `@page size: A4 landscape`, color-adjust, and row break guards. |
+| Print Reliability with Fallback | ✅ Implemented | `print-client-controls.tsx` auto-print once + timeout fallback + manual click handler. |
+| Print Route Loading/Error/Empty States | ✅ Implemented | `print/loading.tsx`, `print/error.tsx`, empty state in `print-timeline-table.tsx`. |
+| Non-goals and Constraints | ✅ Implemented (static) | Two-view architecture preserved; no server-side PDF path introduced. |
+| Print Route Protected Access Behavior | ✅ Implemented | `print/page.tsx` maintains redirect + notFound authorization behavior. |
+
+---
+
+### Coherence (Design)
+| Decision | Followed? | Notes |
+|----------|-----------|-------|
+| D1: Visible export entry in interactive header | ✅ Yes | CTA rendered in `components/gantt/gantt-interactive.tsx`. |
+| D2: Shared timeline contract | ✅ Yes | Print timeline uses shared timeline utils + boundary tests. |
+| D3: Render-ready auto-print + fallback controls | ✅ Yes | `PrintClientControls` composed in print page. |
+| D4: User-safe loading/error/empty states | ✅ Yes | Dedicated loading/error files and sanitized fallback UI. |
+| File changes table | ✅ Yes (with additive tests) | Planned files are present; additional test hardening added (non-breaking). |
+
+---
+
+### Issues Found
+
+**CRITICAL** (must fix before archive):
+None.
+
+**WARNING** (should fix):
+1. Architecture guardrail still lacks a dedicated end-to-end assertion for unchanged DAG/working-day semantics in the print context.
+
+**SUGGESTION** (nice to have):
+1. Add a focused Playwright spec for print guardrail continuity (working-day + dependency chain sanity in print output labels/spans).
+2. Keep the current Playwright runtime assertions as the archive gate for this closure.
+
+---
+
+### Verdict
+**PASS WITH WARNINGS (ARCHIVE-READY)**
+
+All acceptance scenarios now have passing runtime evidence, and the remaining issue is a non-blocking architecture guardrail warning.

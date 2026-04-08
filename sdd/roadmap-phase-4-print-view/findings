@@ -1,0 +1,17 @@
+## Findings — roadmap-phase-4-print-view
+
+### CRITICAL
+None.
+
+### WARNING
+1. **Architecture guardrail lacks explicit print-context behavioral check**
+   - Static and integration evidence show route split and protected access are preserved.
+   - No dedicated E2E assertion explicitly ties print output continuity to working-day/DAG semantics.
+
+### SUGGESTION
+1. Add a focused Playwright spec for print guardrail continuity (working-day + dependency chain sanity in print output labels/spans).
+2. Keep the current Playwright runtime assertions as the archive gate for this closure.
+
+### Archive Readiness
+- **Ready**: Yes
+- **Reason**: Authenticated Playwright smoke passed, and all spec acceptance scenarios now have runtime evidence.

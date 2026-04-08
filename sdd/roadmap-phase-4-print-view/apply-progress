@@ -1,0 +1,27 @@
+## Implementation Progress
+
+**Change**: roadmap-phase-4-print-view  
+**Mode**: Standard (Strict TDD disabled via `sdd/gannt-inther/testing-capabilities`)
+
+### Focus of This Apply Batch
+Close CRITICAL verify blockers for runtime evidence and E2E environment readiness with minimal product-impact hardening.
+
+### Completed in This Batch
+- ✅ Installed Playwright browser binaries in the current environment (`npx playwright install`) to remove the missing-executable blocker.
+- ✅ Hardened `e2e/auth-print-smoke.spec.ts` to assert:
+  - interactive route CTA click (`Exportar PDF/Imprimir`) navigates to `/obra/[id]/print`;
+  - auto-print invocation count reaches exactly one after render-ready state;
+  - runtime print CSS contract evidence includes A4 landscape page sizing and pagination-safety indicators;
+  - manual fallback button click explicitly invokes `window.print()`.
+- ✅ Added targeted manual fallback proof in unit tests:
+  - `components/gantt/__tests__/print-client-controls.test.tsx` now verifies clicking `Imprimir ahora` calls `window.print()`.
+- ✅ Updated SDD tasks artifact checkboxes and execution notes in `sdd/roadmap-phase-4-print-view/tasks`.
+
+### Validation
+- ✅ `npm run type-check`
+- ✅ `npm run lint`
+- ✅ `npm test -- run "components/gantt/__tests__/print-client-controls.test.tsx" "app/(routes)/obra/[id]/print/__tests__/print-page.integration.test.tsx" "app/(routes)/obra/[id]/print/__tests__/print-route-states.test.tsx"`
+- ⚠️ `npx playwright test e2e/auth-print-smoke.spec.ts` executed but skipped (missing `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`, `E2E_OBRA_ID` in environment).
+
+### Status
+Critical code/test hardening blockers are addressed. Remaining verification dependency is environment credentials for authenticated Playwright execution proof.
