@@ -7,6 +7,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        primary: '#263a54',
+        accent: '#f69323',
+        text: '#333333',
+        background: '#ffffff',
         'gantt-bar': '#4472C4',
         'gantt-weekend': '#F2F2F2',
         'gantt-header': '#D9E1F2',
