@@ -58,3 +58,35 @@ export interface ObraSchedule {
   dependencies: TaskDependency[];
   holidays: Set<IsoDate>;
 }
+
+// ============================================================
+// Template types
+// ============================================================
+
+export type TipoObra = "Tipo A" | "Tipo B" | "Tipo C";
+
+export type TemplateStatus = "draft" | "published" | "archived";
+
+export interface TemplateTarea {
+  id: Uuid;
+  projectId: Uuid;
+  tipoObra: TipoObra;
+  version: number;
+  status: TemplateStatus;
+  nombre: string;
+  duracionDias: number;
+  dependeDeTemplateId: Uuid | null;
+  orden: number;
+}
+
+/**
+ * Precomputed tarea payload for the create_obra_with_tasks RPC.
+ * Dependencies are already resolved from template IDs to new tarea UUIDs.
+ */
+export interface ObraBootstrapTarea {
+  id: Uuid;
+  nombre: string;
+  duracionDias: number;
+  dependeDeId: Uuid | null;
+  orden: number;
+}

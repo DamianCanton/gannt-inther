@@ -1,3 +1,5 @@
+import 'server-only'
+
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import {
@@ -154,6 +156,14 @@ export class GanttRepo {
   }): Promise<Uuid> {
     const { obraId, intent, taskId, payload } = params;
 
+    // Log para debugging
+    console.log('[GanttRepo.mutateTaskGraphAtomic] Calling RPC with:', {
+      intent,
+      obra_id: obraId,
+      task_id: taskId,
+      payload: JSON.stringify(payload),
+    })
+
     const { data, error } = await this.supabase.rpc("mutate_task_graph", {
       intent,
       obra_id: obraId,
@@ -162,6 +172,12 @@ export class GanttRepo {
     });
 
     if (error) {
+      console.error('[GanttRepo.mutateTaskGraphAtomic] RPC error:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      })
       throw new TaskMutationError(
         mapMutationErrorToDomainCode(error),
         error.message

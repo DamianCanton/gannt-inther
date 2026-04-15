@@ -4,9 +4,16 @@ import { createObraAction, deleteObraAction } from '@/app/(routes)/obras/actions
 import { AuthContextError } from '@/lib/auth/auth-context'
 import { RepoAccessError } from '@/lib/repositories/gantt-repo'
 
-const { requireAuthContextMock, createObraMock, deleteObraMock, redirectMock } = vi.hoisted(() => ({
+const {
+  requireAuthContextMock,
+  getActiveTemplateMock,
+  createObraFromTemplateMock,
+  deleteObraMock,
+  redirectMock,
+} = vi.hoisted(() => ({
   requireAuthContextMock: vi.fn(),
-  createObraMock: vi.fn(),
+  getActiveTemplateMock: vi.fn(),
+  createObraFromTemplateMock: vi.fn(),
   deleteObraMock: vi.fn(),
   redirectMock: vi.fn((target: string) => {
     throw new Error(`NEXT_REDIRECT:${target}`)
@@ -22,7 +29,11 @@ vi.mock('@/lib/auth/auth-context', async () => {
 })
 
 vi.mock('@/lib/supabase/server', () => ({
-  createServerClient: () => ({ mocked: true }),
+  createServerClient: () => ({
+    from: () => ({
+      select: () => ({ data: [], error: null }),
+    }),
+  }),
 }))
 
 vi.mock('@/lib/repositories/gantt-repo', async () => {
@@ -30,11 +41,17 @@ vi.mock('@/lib/repositories/gantt-repo', async () => {
   return {
     ...actual,
     GanttRepo: class {
-      createObra = createObraMock
       deleteObra = deleteObraMock
     },
   }
 })
+
+vi.mock('@/lib/repositories/template-repo', () => ({
+  TemplateRepo: class {
+    getActiveTemplate = getActiveTemplateMock
+    createObraFromTemplate = createObraFromTemplateMock
+  },
+}))
 
 vi.mock('next/navigation', () => ({
   redirect: redirectMock,
@@ -47,7 +64,20 @@ describe('obras actions', () => {
 
   it('createObraAction uses auth-derived project scope and redirects to /obras on success', async () => {
     requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'project-auth' })
-    createObraMock.mockResolvedValue('obra-1')
+    getActiveTemplateMock.mockResolvedValue([
+      {
+        id: 'tmpl-1',
+        projectId: '00000000-0000-0000-0000-000000000000',
+        tipoObra: 'Tipo A',
+        version: 1,
+        status: 'published',
+        nombre: 'Tarea A',
+        duracionDias: 2,
+        dependeDeTemplateId: null,
+        orden: 1,
+      },
+    ])
+    createObraFromTemplateMock.mockResolvedValue('obra-1')
 
     const formData = new FormData()
     formData.set('nombre', 'Obra nueva')
@@ -56,14 +86,11 @@ describe('obras actions', () => {
 
     await expect(createObraAction(formData)).rejects.toThrow('NEXT_REDIRECT:/obras')
 
-    expect(createObraMock).toHaveBeenCalledWith(
+    expect(createObraFromTemplateMock).toHaveBeenCalledWith(
       expect.objectContaining({
         projectId: 'project-auth',
-        input: expect.objectContaining({
-          nombre: 'Obra nueva',
-          tipoObra: 'Tipo A',
-          fechaInicioGlobal: '2026-04-06',
-        }),
+        nombre: 'Obra nueva',
+        tipoObra: 'Tipo A',
       })
     )
   })
@@ -77,7 +104,7 @@ describe('obras actions', () => {
     formData.set('fechaInicioGlobal', '2026-04-06')
 
     await expect(createObraAction(formData)).rejects.toThrow('NEXT_REDIRECT:/auth/login')
-    expect(createObraMock).not.toHaveBeenCalled()
+    expect(createObraFromTemplateMock).not.toHaveBeenCalled()
   })
 
   it('deleteObraAction denies unauthorized scope deletes', async () => {

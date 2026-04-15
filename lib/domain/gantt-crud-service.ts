@@ -1,3 +1,5 @@
+import 'server-only'
+
 import { detectCycle } from '@/lib/gantt-dag'
 import type { ObraSchedule, TaskDependency, TaskInput, Uuid } from '@/types/gantt'
 
@@ -87,6 +89,7 @@ export function mapMutationErrorToDomainCode(error: unknown): TaskMutationErrorC
   }
 
   if (
+    code === '42501' ||
     code === 'PGRST202' ||
     code === '42883' ||
     message.includes('MUTATE_TASK_GRAPH') ||

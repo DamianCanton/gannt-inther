@@ -137,6 +137,12 @@ describe('gantt-crud-service', () => {
     expect(mapMutationErrorToDomainCode({ code: 'PGRST202', message: 'function not found' })).toBe(
       'MUTATION_UNAVAILABLE'
     )
+    expect(
+      mapMutationErrorToDomainCode({
+        code: '42501',
+        message: 'new row violates row-level security policy for table "dependencias"',
+      })
+    ).toBe('MUTATION_UNAVAILABLE')
     expect(mapMutationErrorToDomainCode({ message: 'unexpected timeout' })).toBe('ATOMIC_WRITE_FAILED')
   })
 })

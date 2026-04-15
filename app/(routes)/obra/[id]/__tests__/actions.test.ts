@@ -274,9 +274,63 @@ describe('saveTaskChange action', () => {
 
     expect(result.error).toEqual({
       code: 'ATOMIC_WRITE_FAILED',
-      message: 'No se pudo guardar el cambio.',
+      message: 'No se pudo guardar el cambio: database unavailable',
     })
     expect(getObraScheduleMock).toHaveBeenCalledTimes(1)
     expect(mutateTaskGraphAtomicMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('recalculates schedule from canonical dependencies when persisted dependency rows are stale', async () => {
+    requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
+
+    const current: ObraSchedule = {
+      ...createScheduleFixture('p-auth', 'o1'),
+      tasks: [
+        {
+          id: 't1',
+          projectId: 'p-auth',
+          obraId: 'o1',
+          nombre: 'Tarea 1',
+          duracionDias: 2,
+          dependeDeId: null,
+          orden: 1,
+        },
+        {
+          id: 't2',
+          projectId: 'p-auth',
+          obraId: 'o1',
+          nombre: 'Tarea 2',
+          duracionDias: 1,
+          dependeDeId: 't1',
+          orden: 2,
+        },
+      ],
+      dependencies: [{ taskId: 't2', dependsOnTaskId: 't1', kind: 'FS' }],
+    }
+
+    const persistedWithStaleDependencyRows: ObraSchedule = {
+      ...current,
+      dependencies: [],
+    }
+
+    getObraScheduleMock
+      .mockResolvedValueOnce(current)
+      .mockResolvedValueOnce(persistedWithStaleDependencyRows)
+    mutateTaskGraphAtomicMock.mockResolvedValue('t2')
+
+    const result = await mutateTask({
+      intent: 'update',
+      obraId: 'o1',
+      taskId: 't2',
+      nombre: 'Tarea 2',
+      duracionDias: 1,
+      dependeDeId: 't1',
+    })
+
+    const byId = new Map(result.schedule?.map((task) => [task.id, task]))
+    expect(result.error).toBeUndefined()
+    expect(byId.get('t1')?.fechaInicio).toBe('2026-04-06')
+    expect(byId.get('t1')?.fechaFin).toBe('2026-04-07')
+    expect(byId.get('t2')?.fechaInicio).toBe('2026-04-08')
   })
 })

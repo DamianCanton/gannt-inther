@@ -27,6 +27,8 @@ function getErrorMessage(errorCode?: string): string | null {
       return 'No existe la obra solicitada o no tenés acceso para eliminarla.'
     case 'ATOMIC_WRITE_FAILED':
       return 'No se pudo completar la operación. Intentá nuevamente.'
+    case 'EMPTY_TEMPLATE':
+      return 'No hay plantilla publicada para este tipo de obra. Creá una desde Gestión de Plantillas.'
     default:
       return 'Ocurrió un error inesperado al procesar la operación.'
   }
@@ -83,7 +85,15 @@ export default async function ObrasPage({ searchParams }: ObrasPageProps) {
           </p>
         ) : null}
 
-        <CreateObraForm />
+        <div className="flex items-center gap-4 mb-6">
+          <CreateObraForm />
+          <Link
+            href="/admin/templates"
+            className="rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            Gestionar plantillas
+          </Link>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {obras.map((obra) => (

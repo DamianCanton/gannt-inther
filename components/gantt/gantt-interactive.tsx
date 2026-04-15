@@ -12,16 +12,18 @@ import type { GanttEditIntent, GanttMutationError, GanttMutationResult } from '.
 export interface GanttInteractiveProps {
   obraNombre: string
   projectId: Uuid
+  obraId: Uuid
   obraStartDate: IsoDate
   printHref: string
   initialSchedule: ScheduleTask[]
   initialScheduleError?: string | null
-  onMutateTask: (payload: GanttEditIntent) => Promise<GanttMutationResult>
+  onMutateTask: (payload: GanttEditIntent & { obraId: Uuid }) => Promise<GanttMutationResult>
 }
 
 export function GanttInteractive({
   obraNombre,
   projectId,
+  obraId,
   obraStartDate,
   printHref,
   initialSchedule,
@@ -55,7 +57,7 @@ export function GanttInteractive({
     setIsMutating(true)
 
     try {
-      const result = await onMutateTask(payload)
+      const result = await onMutateTask({ ...payload, obraId })
 
       if (result.error) {
         const mappedError = result.error

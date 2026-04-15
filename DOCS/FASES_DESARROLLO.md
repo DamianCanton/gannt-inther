@@ -11,7 +11,7 @@
 | 1. Setup y Motor (sin UI) | ✅ Realizada | Implementación engine-first completada y archivada via SDD (motor de fechas + DAG + contratos + pruebas). | `81` (explore), `84` (proposal), `86` (spec), `88` (design), `92` (tasks), `97` (apply), `99` (verify), `113` (archive), `112` (state) |
 | 2. UI Interactiva (canvas) | ✅ Realizada | Cambio SDD `roadmap-phase-3-interactive-gantt-view` implementado, verificado (PASS) y archivado en Engram. | `208` (explore), `211` (proposal), `215` (spec), `218` (design), `222` (tasks), `224` (apply), `228` (verify), `239` (archive) |
 | 3. Exportación (tabla / print) | ✅ Realizada | Cambio SDD `roadmap-phase-4-print-view` implementado, verificado (PASS WITH WARNINGS) y archivado en Engram. | `248` (explore), `250` (proposal), `252` (spec), `256` (design), `260` (tasks), `264` (apply), `270` (verify), `277` (archive) |
-| 4. Pulido (RLS + errores + hardening) | ⏳ Pendiente parcial | Auth/RLS y CRUD ya cerrados en cambios separados; resta consolidar hardening transversal y cierre integral de fase. | `151` (archive phase 6), `206` (archive phase 5), `239` (archive phase 3) |
+| 4. Pulido (RLS + errores + hardening) | ✅ Realizada | Auth/RLS, CRUD, UX async (carga visible), fix atómico de creación con dependencias y hardening completados y archivados. | `151` (archive phase 6), `206` (archive phase 5), `239` (archive phase 3), `326` (archive A4 fixes) |
 
 ## B) Milestones técnicos operativos (README)
 
@@ -49,6 +49,6 @@
 
 ## Orden de ejecución sugerido (próximo tramo)
 
-1. **A4 Pulido integral** → consolidar hardening transversal (errores, UX de fallbacks, cobertura E2E crítica).
+1. **Revisión final de estabilización E2E** o inicio de una nueva feature (MVP finalizado y estabilizado).
 
-> Nota: con Phases 3, 4, 5 y 6 archivadas, el foco pasa a cierre integral de calidad.
+> Nota: Todas las fases principales de arquitectura (1 a 4) y roadmap operativo (1 a 6) se encuentran ✅ Realizadas y estabilizadas.

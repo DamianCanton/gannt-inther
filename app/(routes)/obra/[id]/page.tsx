@@ -5,8 +5,7 @@ import { GanttInteractive } from '@/components/gantt'
 import { AuthContextError } from '@/lib/auth/auth-context'
 import { ensureObraAccess } from '@/lib/auth/guards'
 import { notFound, redirect } from 'next/navigation'
-import { mutateTask } from './actions'
-import type { GanttEditIntent } from '@/components/gantt/gantt-types'
+import { handleMutateTask } from './mutations'
 
 export default async function ObraPage({ params }: { params: { id: string } }) {
   try {
@@ -29,14 +28,12 @@ export default async function ObraPage({ params }: { params: { id: string } }) {
       <GanttInteractive
         obraNombre={obra.obra.nombre}
         projectId={obra.obra.projectId}
+        obraId={params.id}
         obraStartDate={obra.obra.fechaInicioGlobal}
         printHref={`/obra/${params.id}/print`}
         initialSchedule={initialSchedule}
         initialScheduleError={null}
-        onMutateTask={async (payload: GanttEditIntent) => {
-          'use server'
-          return mutateTask({ obraId: params.id, ...payload })
-        }}
+        onMutateTask={handleMutateTask}
       />
     )
   } catch (error) {
@@ -57,6 +54,7 @@ export default async function ObraPage({ params }: { params: { id: string } }) {
         <GanttInteractive
           obraNombre="Obra con error de dependencias"
           projectId="forbidden"
+          obraId={params.id}
           obraStartDate="2026-04-06"
           printHref={`/obra/${params.id}/print`}
           initialSchedule={[]}

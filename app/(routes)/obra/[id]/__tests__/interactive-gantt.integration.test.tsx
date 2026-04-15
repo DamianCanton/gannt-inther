@@ -44,6 +44,7 @@ describe('interactive gantt integration', () => {
       <GanttInteractive
         obraNombre="Obra Demo"
         projectId="p1"
+        obraId="o1"
         obraStartDate="2026-04-06"
         printHref="/obra/o1/print"
         initialSchedule={initialSchedule}
@@ -81,6 +82,7 @@ describe('interactive gantt integration', () => {
       <GanttInteractive
         obraNombre="Obra Demo"
         projectId="p1"
+        obraId="o1"
         obraStartDate="2026-04-06"
         printHref="/obra/o1/print"
         initialSchedule={initialSchedule}
@@ -111,6 +113,7 @@ describe('interactive gantt integration', () => {
       <GanttInteractive
         obraNombre="Obra Demo"
         projectId="p1"
+        obraId="o1"
         obraStartDate="2026-04-06"
         printHref="/obra/o1/print"
         initialSchedule={initialSchedule}
@@ -133,6 +136,7 @@ describe('interactive gantt integration', () => {
       <GanttInteractive
         obraNombre="Obra Vacía"
         projectId="p1"
+        obraId="o1"
         obraStartDate="2026-04-06"
         printHref="/obra/o1/print"
         initialSchedule={[]}
@@ -165,6 +169,7 @@ describe('interactive gantt integration', () => {
       <GanttInteractive
         obraNombre="Obra Vacía"
         projectId="p1"
+        obraId="o1"
         obraStartDate="2026-04-06"
         printHref="/obra/o1/print"
         initialSchedule={[]}
@@ -187,6 +192,7 @@ describe('interactive gantt integration', () => {
       <GanttInteractive
         obraNombre="Obra Demo"
         projectId="p1"
+        obraId="o1"
         obraStartDate="2026-04-06"
         printHref="/obra/o1/print"
         initialSchedule={initialSchedule}
@@ -207,6 +213,7 @@ describe('interactive gantt integration', () => {
       <GanttInteractive
         obraNombre="Obra Demo"
         projectId="p1"
+        obraId="o1"
         obraStartDate="2026-04-06"
         printHref="/obra/o1/print"
         initialSchedule={initialSchedule}
@@ -235,6 +242,7 @@ describe('interactive gantt integration', () => {
       <GanttInteractive
         obraNombre="Obra Demo"
         projectId="p1"
+        obraId="o1"
         obraStartDate="2026-04-06"
         printHref="/obra/o1/print"
         initialSchedule={initialSchedule}
@@ -260,6 +268,7 @@ describe('interactive gantt integration', () => {
       <GanttInteractive
         obraNombre="Obra Demo"
         projectId="p1"
+        obraId="o1"
         obraStartDate="2026-04-06"
         printHref="/obra/o1/print"
         initialSchedule={initialSchedule}
@@ -284,6 +293,7 @@ describe('interactive gantt integration', () => {
       <GanttInteractive
         obraNombre="Obra Demo"
         projectId="p1"
+        obraId="o1"
         obraStartDate="2026-04-06"
         printHref="/obra/o1/print"
         initialSchedule={initialSchedule}
@@ -321,6 +331,7 @@ describe('interactive gantt integration', () => {
       <GanttInteractive
         obraNombre="Obra Demo"
         projectId="p1"
+        obraId="o1"
         obraStartDate="2026-04-06"
         printHref="/obra/o1/print"
         initialSchedule={initialSchedule}

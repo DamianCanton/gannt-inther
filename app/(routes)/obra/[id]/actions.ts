@@ -57,7 +57,7 @@ function mapError(code: TaskMutationErrorCode | string): GanttMutationResult['er
     VALIDATION_ERROR: 'La tarea no cumple con las reglas de validación.',
     DEPENDENCY_CYCLE: 'La dependencia crea un ciclo inválido.',
     ATOMIC_WRITE_FAILED: 'No se pudo guardar el cambio.',
-    MUTATION_UNAVAILABLE: 'La acción de edición no está disponible en este entorno.',
+    MUTATION_UNAVAILABLE: 'La edición no está disponible por una restricción de permisos del entorno (RLS).',
   }
 
   if (code in messageMap) {
@@ -101,7 +101,7 @@ export async function mutateTask(input: MutateTaskInput): Promise<GanttMutationR
 
     const schedule = createScheduleWithDetails({
       tasks: persistedSchedule.tasks,
-      dependencies: persistedSchedule.dependencies,
+      dependencies: service.buildCanonicalDependencies(persistedSchedule.tasks),
       obraStartDate: persistedSchedule.obra.fechaInicioGlobal,
       holidays: persistedSchedule.holidays,
       changedTaskId: input.intent === 'delete' ? undefined : changedTaskId,
