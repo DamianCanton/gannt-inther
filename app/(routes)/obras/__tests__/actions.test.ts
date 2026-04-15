@@ -9,15 +9,13 @@ const {
   getActiveTemplateMock,
   createObraFromTemplateMock,
   deleteObraMock,
-  redirectMock,
+  revalidatePathMock,
 } = vi.hoisted(() => ({
   requireAuthContextMock: vi.fn(),
   getActiveTemplateMock: vi.fn(),
   createObraFromTemplateMock: vi.fn(),
   deleteObraMock: vi.fn(),
-  redirectMock: vi.fn((target: string) => {
-    throw new Error(`NEXT_REDIRECT:${target}`)
-  }),
+  revalidatePathMock: vi.fn(),
 }))
 
 vi.mock('@/lib/auth/auth-context', async () => {
@@ -53,8 +51,8 @@ vi.mock('@/lib/repositories/template-repo', () => ({
   },
 }))
 
-vi.mock('next/navigation', () => ({
-  redirect: redirectMock,
+vi.mock('next/cache', () => ({
+  revalidatePath: revalidatePathMock,
 }))
 
 describe('obras actions', () => {
@@ -62,80 +60,122 @@ describe('obras actions', () => {
     vi.clearAllMocks()
   })
 
-  it('createObraAction uses auth-derived project scope and redirects to /obras on success', async () => {
-    requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'project-auth' })
-    getActiveTemplateMock.mockResolvedValue([
-      {
-        id: 'tmpl-1',
-        projectId: '00000000-0000-0000-0000-000000000000',
-        tipoObra: 'Tipo A',
-        version: 1,
-        status: 'published',
-        nombre: 'Tarea A',
-        duracionDias: 2,
-        dependeDeTemplateId: null,
-        orden: 1,
-      },
-    ])
-    createObraFromTemplateMock.mockResolvedValue('obra-1')
+  describe('createObraAction', () => {
+    it('returns success and revalidates on successful creation', async () => {
+      requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'project-auth' })
+      getActiveTemplateMock.mockResolvedValue([
+        {
+          id: 'tmpl-1',
+          projectId: '00000000-0000-0000-0000-000000000000',
+          tipoObra: 'Tipo A',
+          version: 1,
+          status: 'published',
+          nombre: 'Tarea A',
+          duracionDias: 2,
+          dependeDeTemplateId: null,
+          orden: 1,
+        },
+      ])
+      createObraFromTemplateMock.mockResolvedValue('obra-1')
 
-    const formData = new FormData()
-    formData.set('nombre', 'Obra nueva')
-    formData.set('tipoObra', 'Tipo A')
-    formData.set('fechaInicioGlobal', '2026-04-06')
+      const formData = new FormData()
+      formData.set('nombre', 'Obra nueva')
+      formData.set('tipoObra', 'Tipo A')
+      formData.set('fechaInicioGlobal', '2026-04-06')
 
-    await expect(createObraAction(formData)).rejects.toThrow('NEXT_REDIRECT:/obras')
+      const result = await createObraAction(formData)
 
-    expect(createObraFromTemplateMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        projectId: 'project-auth',
-        nombre: 'Obra nueva',
-        tipoObra: 'Tipo A',
-      })
-    )
-  })
+      expect(result).toEqual({ success: true })
+      expect(revalidatePathMock).toHaveBeenCalledWith('/obras')
+      expect(createObraFromTemplateMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          projectId: 'project-auth',
+          nombre: 'Obra nueva',
+          tipoObra: 'Tipo A',
+        })
+      )
+    })
 
-  it('createObraAction redirects unauthenticated users to login', async () => {
-    requireAuthContextMock.mockRejectedValue(new AuthContextError('UNAUTHENTICATED', 'login required'))
+    it('returns UNAUTHENTICATED error for unauthenticated users', async () => {
+      requireAuthContextMock.mockRejectedValue(
+        new AuthContextError('UNAUTHENTICATED', 'login required')
+      )
 
-    const formData = new FormData()
-    formData.set('nombre', 'Obra nueva')
-    formData.set('tipoObra', 'Tipo A')
-    formData.set('fechaInicioGlobal', '2026-04-06')
+      const formData = new FormData()
+      formData.set('nombre', 'Obra nueva')
+      formData.set('tipoObra', 'Tipo A')
+      formData.set('fechaInicioGlobal', '2026-04-06')
 
-    await expect(createObraAction(formData)).rejects.toThrow('NEXT_REDIRECT:/auth/login')
-    expect(createObraFromTemplateMock).not.toHaveBeenCalled()
-  })
+      const result = await createObraAction(formData)
 
-  it('deleteObraAction denies unauthorized scope deletes', async () => {
-    requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'project-auth' })
-    deleteObraMock.mockRejectedValue(new RepoAccessError('forbidden'))
+      expect(result).toEqual({ success: false, error: 'UNAUTHENTICATED' })
+      expect(createObraFromTemplateMock).not.toHaveBeenCalled()
+      expect(revalidatePathMock).not.toHaveBeenCalled()
+    })
 
-    const formData = new FormData()
-    formData.set('obraId', 'obra-out-of-scope')
+    it('returns VALIDATION_ERROR for missing required fields', async () => {
+      const formData = new FormData()
+      formData.set('nombre', 'Obra nueva')
+      // Missing tipoObra and fechaInicioGlobal
 
-    await expect(deleteObraAction(formData)).rejects.toThrow(
-      'NEXT_REDIRECT:/obras?error=FORBIDDEN_OR_NOT_FOUND'
-    )
+      const result = await createObraAction(formData)
 
-    expect(deleteObraMock).toHaveBeenCalledWith({
-      projectId: 'project-auth',
-      obraId: 'obra-out-of-scope',
+      expect(result).toEqual({ success: false, error: 'VALIDATION_ERROR' })
+    })
+
+    it('returns EMPTY_TEMPLATE when no template exists', async () => {
+      requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'project-auth' })
+      getActiveTemplateMock.mockResolvedValue([])
+
+      const formData = new FormData()
+      formData.set('nombre', 'Obra nueva')
+      formData.set('tipoObra', 'Tipo A')
+      formData.set('fechaInicioGlobal', '2026-04-06')
+
+      const result = await createObraAction(formData)
+
+      expect(result).toEqual({ success: false, error: 'EMPTY_TEMPLATE' })
     })
   })
 
-  it('deleteObraAction redirects after successful scoped delete', async () => {
-    requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'project-auth' })
-    deleteObraMock.mockResolvedValue(undefined)
+  describe('deleteObraAction', () => {
+    it('returns success and revalidates on successful deletion', async () => {
+      requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'project-auth' })
+      deleteObraMock.mockResolvedValue(undefined)
 
-    const formData = new FormData()
-    formData.set('obraId', 'obra-1')
+      const formData = new FormData()
+      formData.set('obraId', 'obra-1')
 
-    await expect(deleteObraAction(formData)).rejects.toThrow('NEXT_REDIRECT:/obras')
+      const result = await deleteObraAction(formData)
 
-    expect(deleteObraMock).toHaveBeenCalledWith({
-      projectId: 'project-auth',
-      obraId: 'obra-1',
+      expect(result).toEqual({ success: true })
+      expect(revalidatePathMock).toHaveBeenCalledWith('/obras')
+      expect(deleteObraMock).toHaveBeenCalledWith({
+        projectId: 'project-auth',
+        obraId: 'obra-1',
+      })
+    })
+
+    it('returns FORBIDDEN_OR_NOT_FOUND for out-of-scope deletes', async () => {
+      requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'project-auth' })
+      deleteObraMock.mockRejectedValue(new RepoAccessError('forbidden'))
+
+      const formData = new FormData()
+      formData.set('obraId', 'obra-out-of-scope')
+
+      const result = await deleteObraAction(formData)
+
+      expect(result).toEqual({ success: false, error: 'FORBIDDEN_OR_NOT_FOUND' })
+      expect(revalidatePathMock).not.toHaveBeenCalled()
+    })
+
+    it('returns VALIDATION_ERROR for missing obraId', async () => {
+      const formData = new FormData()
+      // Missing obraId
+
+      const result = await deleteObraAction(formData)
+
+      expect(result).toEqual({ success: false, error: 'VALIDATION_ERROR' })
     })
   })
 })

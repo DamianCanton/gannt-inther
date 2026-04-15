@@ -1,6 +1,6 @@
 'use server'
 
-import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 
 import { AuthContextError, requireAuthContext } from '@/lib/auth/auth-context'
 import { remapTemplateToBootstrap } from '@/lib/bootstrap-mapping'
@@ -14,8 +14,9 @@ function readString(value: FormDataEntryValue | null): string {
   return typeof value === 'string' ? value.trim() : ''
 }
 
-function redirectWithError(code: string): never {
-  redirect(`/obras?error=${encodeURIComponent(code)}`)
+export type ActionResponse = {
+  success: boolean
+  error?: string
 }
 
 /**
@@ -90,7 +91,7 @@ async function bootstrapTareasFromTemplate(params: {
   }))
 }
 
-export async function createObraAction(formData: FormData): Promise<void> {
+export async function createObraAction(formData: FormData): Promise<ActionResponse> {
   const nombre = readString(formData.get('nombre'))
   const clienteRaw = readString(formData.get('cliente'))
   const tipoObra = readString(formData.get('tipoObra'))
@@ -98,11 +99,11 @@ export async function createObraAction(formData: FormData): Promise<void> {
   const vigenciaRaw = readString(formData.get('vigenciaTexto'))
 
   if (!nombre || !tipoObra || !fechaInicioGlobal) {
-    redirectWithError('VALIDATION_ERROR')
+    return { success: false, error: 'VALIDATION_ERROR' }
   }
 
   if (tipoObra !== 'Tipo A' && tipoObra !== 'Tipo B' && tipoObra !== 'Tipo C') {
-    redirectWithError('VALIDATION_ERROR')
+    return { success: false, error: 'VALIDATION_ERROR' }
   }
 
   const supabase = createServerClient()
@@ -131,28 +132,29 @@ export async function createObraAction(formData: FormData): Promise<void> {
     })
   } catch (error) {
     if (error instanceof AuthContextError && error.code === 'UNAUTHENTICATED') {
-      redirect('/auth/login')
+      return { success: false, error: 'UNAUTHENTICATED' }
     }
 
     if (error instanceof AuthContextError && error.code === 'NO_PROJECT_MEMBERSHIP') {
-      redirectWithError('NO_PROJECT_MEMBERSHIP')
+      return { success: false, error: 'NO_PROJECT_MEMBERSHIP' }
     }
 
     if (error instanceof Error && error.message.startsWith('EMPTY_TEMPLATE')) {
-      redirectWithError('EMPTY_TEMPLATE')
+      return { success: false, error: 'EMPTY_TEMPLATE' }
     }
 
     console.error('[createObraAction] Error:', error)
-    redirectWithError('ATOMIC_WRITE_FAILED')
+    return { success: false, error: 'ATOMIC_WRITE_FAILED' }
   }
 
-  redirect('/obras')
+  revalidatePath('/obras')
+  return { success: true }
 }
 
-export async function deleteObraAction(formData: FormData): Promise<void> {
+export async function deleteObraAction(formData: FormData): Promise<ActionResponse> {
   const obraId = readString(formData.get('obraId')) as Uuid
   if (!obraId) {
-    redirectWithError('VALIDATION_ERROR')
+    return { success: false, error: 'VALIDATION_ERROR' }
   }
 
   const supabase = createServerClient()
@@ -166,19 +168,21 @@ export async function deleteObraAction(formData: FormData): Promise<void> {
     })
   } catch (error) {
     if (error instanceof AuthContextError && error.code === 'UNAUTHENTICATED') {
-      redirect('/auth/login')
+      return { success: false, error: 'UNAUTHENTICATED' }
     }
 
     if (error instanceof AuthContextError && error.code === 'NO_PROJECT_MEMBERSHIP') {
-      redirectWithError('NO_PROJECT_MEMBERSHIP')
+      return { success: false, error: 'NO_PROJECT_MEMBERSHIP' }
     }
 
     if (error instanceof RepoAccessError) {
-      redirectWithError('FORBIDDEN_OR_NOT_FOUND')
+      return { success: false, error: 'FORBIDDEN_OR_NOT_FOUND' }
     }
 
-    redirectWithError('ATOMIC_WRITE_FAILED')
+    console.error('[deleteObraAction] Error:', error)
+    return { success: false, error: 'ATOMIC_WRITE_FAILED' }
   }
 
-  redirect('/obras')
+  revalidatePath('/obras')
+  return { success: true }
 }

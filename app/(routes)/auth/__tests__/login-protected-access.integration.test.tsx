@@ -54,9 +54,21 @@ vi.mock('@/lib/supabase/server', () => ({
       if (table === 'obras') {
         return {
           select: () => ({
-            eq: async () => ({
-              data: [{ id: 'o1', nombre: 'Obra Norte', project_id: 'p1' }],
-              error: null,
+            eq: () => ({
+              order: () => ({
+                data: [
+                  {
+                    id: 'o1',
+                    nombre: 'Obra Norte',
+                    project_id: 'p1',
+                    tipo_obra: 'Tipo A',
+                    fecha_inicio_global: '2026-04-01',
+                    vigencia_texto: null,
+                    tareas: [{ count: 3 }],
+                  },
+                ],
+                error: null,
+              }),
             }),
           }),
         }
@@ -89,7 +101,7 @@ describe('login -> protected route integration', () => {
 
     expect(redirectMock).toHaveBeenCalledWith('/obras')
 
-    const page = await ObrasPage({})
+    const page = await ObrasPage()
     render(page)
 
     expect(screen.getByText('Obra Norte')).toBeTruthy()

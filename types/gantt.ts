@@ -52,6 +52,21 @@ export interface ObraInput {
   vigenciaTexto: string | null;
 }
 
+/**
+ * DTO para el listado de obras (/obras).
+ * Incluye conteo de tareas calculado por agregación SQL en el repositorio.
+ */
+export interface ObraDTO {
+  id: Uuid;
+  projectId: Uuid;
+  nombre: string;
+  cliente: string | null;
+  tipoObra: "Tipo A" | "Tipo B" | "Tipo C";
+  fechaInicioGlobal: IsoDate;
+  vigenciaTexto: string | null;
+  taskCount: number;
+}
+
 export interface ObraSchedule {
   obra: ObraInput;
   tasks: TaskInput[];

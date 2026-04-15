@@ -10,6 +10,7 @@ import {
 
 import type {
   IsoDate,
+  ObraDTO,
   ObraSchedule,
   TaskDependency,
   TaskInput,
@@ -76,6 +77,43 @@ export class GanttRepo {
     if (duration < 1) {
       throw new Error(`INVALID_DURATION:${taskId}:${duration}`)
     }
+  }
+
+  /**
+   * Lista todas las obras de un proyecto con su conteo de tareas.
+   * Utiliza un JOIN anidado de PostgREST (tareas(count)) para obtener el
+   * taskCount directamente desde la DB, sin agregación en memoria.
+   */
+  public async listObras(projectId: Uuid): Promise<ObraDTO[]> {
+    const { data, error } = await this.supabase
+      .from("obras")
+      .select(
+        "id, project_id, nombre, cliente, tipo_obra, fecha_inicio_global, vigencia_texto, tareas(count)"
+      )
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    type ObraWithCount = DbObraRow & {
+      tareas: { count: number }[];
+    };
+
+    return (data ?? []).map<ObraDTO>((row) => {
+      const typedRow = row as unknown as ObraWithCount;
+      return {
+        id: typedRow.id,
+        projectId: typedRow.project_id,
+        nombre: typedRow.nombre,
+        cliente: typedRow.cliente,
+        tipoObra: typedRow.tipo_obra,
+        fechaInicioGlobal: typedRow.fecha_inicio_global as IsoDate,
+        vigenciaTexto: typedRow.vigencia_texto,
+        taskCount: typedRow.tareas?.[0]?.count ?? 0,
+      };
+    });
   }
 
   public async getObraSchedule(params: {

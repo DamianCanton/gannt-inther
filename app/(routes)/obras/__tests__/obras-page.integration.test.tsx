@@ -4,15 +4,17 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import ObrasPage from '@/app/(routes)/obras/page'
 import { AuthContextError } from '@/lib/auth/auth-context'
 
-const { requireAuthContextMock, obrasQueryMock, redirectMock } = vi.hoisted(() => ({
+const { requireAuthContextMock, listObrasMock, redirectMock } = vi.hoisted(() => ({
   requireAuthContextMock: vi.fn(),
-  obrasQueryMock: vi.fn(),
-  redirectMock: vi.fn(),
+  listObrasMock: vi.fn(),
+  redirectMock: vi.fn((target: string) => {
+    throw new Error(`NEXT_REDIRECT:${target}`)
+  }),
 }))
 
 vi.mock('@/app/(routes)/obras/actions', () => ({
-  createObraAction: '/_actions/create-obra',
-  deleteObraAction: '/_actions/delete-obra',
+  createObraAction: vi.fn(),
+  deleteObraAction: vi.fn(),
 }))
 
 vi.mock('@/lib/auth/auth-context', async () => {
@@ -23,14 +25,15 @@ vi.mock('@/lib/auth/auth-context', async () => {
   }
 })
 
+vi.mock('@/lib/repositories/gantt-repo', () => ({
+  GanttRepo: class {
+    listObras = listObrasMock
+  },
+  RepoAccessError: class extends Error {},
+}))
+
 vi.mock('@/lib/supabase/server', () => ({
-  createServerClient: () => ({
-    from: () => ({
-      select: () => ({
-        eq: obrasQueryMock,
-      }),
-    }),
-  }),
+  createServerClient: () => ({}),
 }))
 
 vi.mock('next/navigation', () => ({
@@ -43,17 +46,26 @@ describe('/obras route integration', () => {
     vi.clearAllMocks()
   })
 
-  it('renders only obras from resolved membership project', async () => {
+  it('renders obras from GanttRepo.listObras', async () => {
     requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'p1' })
-    obrasQueryMock.mockResolvedValue({
-      data: [{ id: 'o1', nombre: 'Obra Norte', project_id: 'p1' }],
-      error: null,
-    })
+    listObrasMock.mockResolvedValue([
+      {
+        id: 'o1',
+        projectId: 'p1',
+        nombre: 'Obra Norte',
+        cliente: null,
+        tipoObra: 'Tipo A',
+        fechaInicioGlobal: '2026-04-01',
+        vigenciaTexto: null,
+        taskCount: 5,
+      },
+    ])
 
-    const page = await ObrasPage({})
+    const page = await ObrasPage()
     render(page)
 
     expect(screen.getByText('Obra Norte')).toBeTruthy()
+    expect(listObrasMock).toHaveBeenCalledWith('p1')
     expect(redirectMock).not.toHaveBeenCalled()
   })
 
@@ -62,7 +74,7 @@ describe('/obras route integration', () => {
       new AuthContextError('UNAUTHENTICATED', 'login required')
     )
 
-    await ObrasPage({})
+    await expect(ObrasPage()).rejects.toThrow('NEXT_REDIRECT:/auth/login')
 
     expect(redirectMock).toHaveBeenCalledWith('/auth/login')
   })
@@ -72,9 +84,9 @@ describe('/obras route integration', () => {
       new AuthContextError('NO_PROJECT_MEMBERSHIP', 'no membership')
     )
 
-    const page = await ObrasPage({})
+    const page = await ObrasPage()
     render(page)
 
-    expect(screen.getByText('No tenés membresía activa en ningún proyecto.')).toBeTruthy()
+    expect(screen.getByText('No tenés membresía activa en ningún proyecto')).toBeTruthy()
   })
 })
