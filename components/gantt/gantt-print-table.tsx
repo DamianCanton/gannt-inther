@@ -1,6 +1,4 @@
-import React from 'react'
 import type { ObraSchedule } from '@/types/gantt'
-
 import { PrintTimelineTable } from './print-timeline-table'
 
 export interface GanttPrintTableProps {

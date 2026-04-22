@@ -1,13 +1,64 @@
+/* eslint-disable @next/next/no-img-element */
+/* Print view needs raw <img> for @media print reliability */
+import { isWeekend, countWorkingDays } from '@/lib/date-engine'
 import { createSchedule } from '@/lib/gantt-scheduler'
 import {
   buildTimelineColumns,
   deriveTimelineScale,
   getTaskTimelineRange,
 } from '@/components/gantt/timeline-utils'
-import type { ObraSchedule } from '@/types/gantt'
+import type { ObraSchedule, IsoDate } from '@/types/gantt'
 
 export interface PrintTimelineTableProps {
   obra: ObraSchedule
+}
+
+function formatDate(dateStr: IsoDate): string {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`
+}
+
+function computeObraDateRange(schedule: { fechaInicio: IsoDate; fechaFin: IsoDate }[]): {
+  firstStart: IsoDate | null
+  lastEnd: IsoDate | null
+} {
+  if (schedule.length === 0) return { firstStart: null, lastEnd: null }
+  let firstStart = schedule[0]!.fechaInicio
+  let lastEnd = schedule[0]!.fechaFin
+  for (const t of schedule) {
+    if (t.fechaInicio < firstStart) firstStart = t.fechaInicio
+    if (t.fechaFin > lastEnd) lastEnd = t.fechaFin
+  }
+  return { firstStart, lastEnd }
+}
+
+function capitalize(str: string): string {
+  if (!str) return str
+  return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
+function computeMonthGroups(columns: { key: string; label: string }[]) {
+  const groups: { monthName: string; count: number }[] = []
+  let currentMonth = ''
+  let currentCount = 0
+
+  columns.forEach((col) => {
+    const date = new Date(col.key + 'T00:00:00Z')
+    const mName = date.toLocaleDateString('es-AR', { month: 'long', timeZone: 'UTC' }).toUpperCase()
+    if (mName !== currentMonth) {
+      if (currentCount > 0) {
+        groups.push({ monthName: currentMonth, count: currentCount })
+      }
+      currentMonth = mName
+      currentCount = 1
+    } else {
+      currentCount++
+    }
+  })
+  if (currentCount > 0) {
+    groups.push({ monthName: currentMonth, count: currentCount })
+  }
+  return groups
 }
 
 export function PrintTimelineTable({ obra }: PrintTimelineTableProps) {
@@ -24,54 +75,158 @@ export function PrintTimelineTable({ obra }: PrintTimelineTableProps) {
     scale: scaleMode,
   })
 
+  const { firstStart, lastEnd } = computeObraDateRange(schedule)
+  const totalObraDays =
+    firstStart && lastEnd ? countWorkingDays(firstStart, lastEnd, obra.holidays) : 0
+
+  const cliente = capitalize(obra.obra.cliente?.trim() || 'Sin especificar')
+  const obraNombre = capitalize(obra.obra.nombre)
+  const vigencia =
+    obra.obra.vigenciaTexto?.trim() || formatDate(obra.obra.fechaInicioGlobal)
+
+  const monthGroups = scaleMode === 'daily' ? computeMonthGroups(columns) : []
+
   return (
-    <div className="print-container p-4">
-      <header className="mb-4">
-        <h1 className="text-2xl font-bold">{obra.obra.nombre}</h1>
-        <p className="text-sm text-gray-700">Proyecto: {obra.obra.projectId}</p>
-        <p className="text-sm text-gray-700">Escala: {scaleMode === 'daily' ? 'Diaria' : 'Semanal'}</p>
+    <div className="print-container">
+      {/* ── Letterhead ───────────────────────────────────────── */}
+      <header className="print-letterhead">
+        <div className="print-letterhead__logo">
+          <img
+            src="/inther-logo.png"
+            alt="INTHER S.R.L. — Aire Acondicionado"
+            className="print-letterhead__logo-img"
+          />
+        </div>
+        <div className="print-letterhead__meta">
+          <div className="print-letterhead__row">
+            <span className="print-letterhead__label">Obra:</span>
+            <span className="print-letterhead__value">{obraNombre}</span>
+          </div>
+          <div className="print-letterhead__row">
+            <span className="print-letterhead__label">Cliente:</span>
+            <span className="print-letterhead__value">{cliente}</span>
+          </div>
+          <div className="print-letterhead__row">
+            <span className="print-letterhead__label">Vigencia:</span>
+            <span className="print-letterhead__value">{vigencia}</span>
+          </div>
+          <div className="print-letterhead__row">
+            <span className="print-letterhead__label">Duración:</span>
+            <span className="print-letterhead__value">
+              {totalObraDays} días de obra
+              <span className="print-letterhead__scale">
+                {' '}· Escala {scaleMode === 'daily' ? 'diaria' : 'semanal'}
+              </span>
+            </span>
+          </div>
+        </div>
       </header>
 
-      {schedule.length === 0 ? (
-        <div className="rounded border border-dashed border-gray-300 p-4 text-sm text-gray-600">
-          No hay tareas imprimibles para esta obra.
+      <div className="print-letterhead__divider" />
+
+      {/* ── Date range bar ───────────────────────────────────── */}
+      {firstStart && lastEnd ? (
+        <div className="print-date-range">
+          <span>Desde {formatDate(firstStart)}</span>
+          <span className="print-date-range__sep">—</span>
+          <span>Hasta {formatDate(lastEnd)}</span>
         </div>
       ) : null}
 
-      <table className="print-gantt-table w-full border-collapse text-xs">
-        <thead>
-          <tr>
-            <th className="sticky left-0 bg-white border px-2 py-1 text-left">Tarea</th>
-            {columns.map((column) => (
-              <th key={column.key} className="border px-2 py-1 whitespace-nowrap">{column.label}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {schedule.map((task) => (
-            <tr key={task.id} className="print-row">
-              <td className="sticky left-0 bg-white border px-2 py-1 font-medium">{task.nombre}</td>
-              {columns.map((column, columnIndex) => {
-                const range = getTaskTimelineRange({
-                  task,
-                  obraStartDate: obra.obra.fechaInicioGlobal,
-                  scale: scaleMode,
-                })
-                const isActive =
-                  columnIndex >= range.startIndex &&
-                  columnIndex < range.startIndex + range.span
-
+      {/* ── Table ────────────────────────────────────────────── */}
+      {schedule.length === 0 ? (
+        <div className="print-empty">
+          No hay tareas imprimibles para esta obra.
+        </div>
+      ) : (
+        <table className="print-gantt-table">
+          <thead>
+            {scaleMode === 'daily' ? (
+              <tr>
+                <th className="print-gantt-table__task-header" rowSpan={2}>Tarea</th>
+                <th className="print-gantt-table__dur-header" rowSpan={2}>Días</th>
+                {monthGroups.map((mg, i) => (
+                  <th
+                    key={`mg-${i}`}
+                    colSpan={mg.count}
+                    className="print-gantt-table__month-header"
+                  >
+                    {mg.monthName}
+                  </th>
+                ))}
+              </tr>
+            ) : null}
+            <tr>
+              {scaleMode !== 'daily' ? (
+                <>
+                  <th className="print-gantt-table__task-header">Tarea</th>
+                  <th className="print-gantt-table__dur-header">Días</th>
+                </>
+              ) : null}
+              {columns.map((column) => {
+                let dayLabel = column.label
+                if (scaleMode === 'daily') {
+                  const date = new Date(column.key + 'T00:00:00Z')
+                  dayLabel = date.toLocaleDateString('es-AR', {
+                    weekday: 'short',
+                    day: '2-digit',
+                    timeZone: 'UTC',
+                  }).replace('.', '')
+                }
                 return (
-                  <td
-                    key={`${task.id}-${column.key}`}
-                    className={`border px-1 py-1 ${isActive ? 'bg-blue-200' : 'bg-white'}`}
-                  />
+                  <th key={column.key} className="print-gantt-table__col-header py-1 font-semibold">
+                    {dayLabel}
+                  </th>
                 )
               })}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {schedule.map((task, rowIdx) => (
+              <tr key={task.id} className="print-row">
+                <td className="print-gantt-table__task-name">{task.nombre}</td>
+                <td className="print-gantt-table__task-dur">{task.duracionDias}</td>
+                {columns.map((column, columnIndex) => {
+                  const range = getTaskTimelineRange({
+                    task,
+                    obraStartDate: obra.obra.fechaInicioGlobal,
+                    scale: scaleMode,
+                  })
+                  const isInRange =
+                    columnIndex >= range.startIndex &&
+                    columnIndex < range.startIndex + range.span
+                  const isWeekendCol =
+                    scaleMode === 'daily' ? isWeekend(column.key) : false
+                  const isActive = isInRange && !isWeekendCol
+
+                  return (
+                    <td
+                      key={`${task.id}-${column.key}`}
+                      className={`print-gantt-table__cell ${
+                        isActive
+                          ? rowIdx % 2 === 0
+                            ? 'print-gantt-table__cell--active-a'
+                            : 'print-gantt-table__cell--active-b'
+                          : isWeekendCol
+                            ? 'print-gantt-table__cell--weekend'
+                            : ''
+                      }`}
+                    />
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
+      {/* ── Footer ───────────────────────────────────────────── */}
+      <footer className="print-footer">
+        <span>INTHER S.R.L. — Aire Acondicionado</span>
+        <span className="print-footer__date">
+          Impreso: {new Date().toLocaleDateString('es-AR')}
+        </span>
+      </footer>
     </div>
   )
 }

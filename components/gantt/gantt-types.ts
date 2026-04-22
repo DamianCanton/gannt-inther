@@ -2,12 +2,21 @@ import type { ScheduleTask, Uuid } from '@/types/gantt'
 
 export type GanttEditorMode = 'create' | 'update' | 'delete'
 
+export type SmartInsertStrategy = 'insert' | 'branch'
+
+export interface SmartInsertPayload {
+  strategy: SmartInsertStrategy
+  conflictParentId: Uuid
+  conflictChildId: Uuid
+}
+
 export type GanttEditIntent =
   | {
       intent: 'create'
       nombre: string
       duracionDias: number
       dependeDeId: Uuid | null
+      smartInsert?: SmartInsertPayload
     }
   | {
       intent: 'update'
@@ -15,6 +24,7 @@ export type GanttEditIntent =
       nombre: string
       duracionDias: number
       dependeDeId: Uuid | null
+      smartInsert?: SmartInsertPayload
     }
   | {
       intent: 'delete'

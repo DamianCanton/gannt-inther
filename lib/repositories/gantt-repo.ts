@@ -60,6 +60,11 @@ type MutateTaskGraphPayload = {
   nombre?: string;
   duracion_dias?: number;
   depende_de_id?: string | null;
+  smart_insert?: {
+    strategy: 'insert' | 'branch';
+    conflictParentId: string;
+    conflictChildId: string;
+  };
 };
 
 type CreateObraInput = {

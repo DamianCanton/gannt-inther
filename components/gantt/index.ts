@@ -1,4 +1,6 @@
 export { GanttInteractive } from './gantt-interactive'
+export { GanttHeader } from './gantt-header'
+export { GanttAlerts } from './gantt-alerts'
 export { GanttPrintTable } from './gantt-print-table'
 export { PrintClientControls } from './print-client-controls'
 export { GanttGrid } from './gantt-grid'

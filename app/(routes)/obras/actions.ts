@@ -14,6 +14,14 @@ function readString(value: FormDataEntryValue | null): string {
   return typeof value === 'string' ? value.trim() : ''
 }
 
+function capitalizeWords(str: string): string {
+  if (!str) return str
+  return str
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
+}
+
 export type ActionResponse = {
   success: boolean
   error?: string
@@ -92,8 +100,8 @@ async function bootstrapTareasFromTemplate(params: {
 }
 
 export async function createObraAction(formData: FormData): Promise<ActionResponse> {
-  const nombre = readString(formData.get('nombre'))
-  const clienteRaw = readString(formData.get('cliente'))
+  const nombre = capitalizeWords(readString(formData.get('nombre')))
+  const clienteRaw = capitalizeWords(readString(formData.get('cliente')))
   const tipoObra = readString(formData.get('tipoObra'))
   const fechaInicioGlobal = readString(formData.get('fechaInicioGlobal'))
   const vigenciaRaw = readString(formData.get('vigenciaTexto'))

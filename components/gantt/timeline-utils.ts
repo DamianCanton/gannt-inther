@@ -74,6 +74,7 @@ export function buildTimelineColumns(params: {
         weekday: 'short',
         day: '2-digit',
         month: '2-digit',
+        timeZone: 'UTC',
       })
 
       return {

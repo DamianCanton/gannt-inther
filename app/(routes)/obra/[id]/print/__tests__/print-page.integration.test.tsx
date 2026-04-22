@@ -138,6 +138,6 @@ describe('/obra/[id]/print route integration', () => {
     const page = await PrintPage({ params: { id: 'o1' } })
     render(page)
 
-    expect(screen.getByText('Escala: Semanal')).toBeTruthy()
+    expect(screen.getByText(/Escala semanal/i)).toBeTruthy()
   })
 })

@@ -8,41 +8,41 @@ export interface TaskListProps {
   onSelectTask: (taskId: Uuid) => void
 }
 
+/**
+ * Presentational component: renders only the task rows.
+ * The header and container layout are owned by GanttGrid.
+ */
 export function TaskList({ tasks, selectedTaskId, onSelectTask }: TaskListProps) {
+  if (tasks.length === 0) {
+    return (
+      <div className="flex items-center justify-center p-6 text-sm text-gray-500">
+        Todavía no hay tareas cargadas.
+      </div>
+    )
+  }
+
   return (
-    <section className="rounded border border-gray-200 bg-white">
-      <header className="border-b border-gray-200 p-4">
-        <h2 className="text-lg font-semibold">Tareas</h2>
-        <p className="text-sm text-gray-500">Seleccioná una fila para ver dependencias.</p>
-      </header>
+    <>
+      {tasks.map((task) => {
+        const isSelected = task.id === selectedTaskId
 
-      {tasks.length === 0 ? (
-        <div className="p-4 text-sm text-gray-500">Todavía no hay tareas cargadas.</div>
-      ) : (
-        <ul className="divide-y divide-gray-100">
-          {tasks.map((task) => {
-            const isSelected = task.id === selectedTaskId
-
-            return (
-              <li key={task.id}>
-                <Button
-                  type="button"
-                  variant={isSelected ? 'secondary' : 'ghost'}
-                  className={`flex w-full flex-col items-start gap-1 rounded-none px-4 py-3 text-left ${
-                    isSelected ? 'bg-blue-50' : ''
-                  }`}
-                  onClick={() => onSelectTask(task.id)}
-                >
-                  <span className="font-medium text-gray-900">{task.nombre}</span>
-                  <span className="text-xs text-gray-500">
-                    {task.fechaInicio} → {task.fechaFin} · {task.duracionDias} días
-                  </span>
-                </Button>
-              </li>
-            )
-          })}
-        </ul>
-      )}
-    </section>
+        return (
+          <Button
+            key={task.id}
+            type="button"
+            variant={isSelected ? 'secondary' : 'ghost'}
+            className={`flex h-full w-full flex-col items-start gap-0.5 rounded-none px-4 py-2 text-left ${
+              isSelected ? 'bg-blue-50' : ''
+            }`}
+            onClick={() => onSelectTask(task.id)}
+          >
+            <span className="font-medium text-gray-900">{task.nombre}</span>
+            <span className="text-xs text-gray-500">
+              {task.fechaInicio} → {task.fechaFin} · {task.duracionDias} días
+            </span>
+          </Button>
+        )
+      })}
+    </>
   )
 }

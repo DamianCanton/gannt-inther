@@ -5,7 +5,9 @@ import { useMemo, useState } from 'react'
 import { detectCycle } from '@/lib/gantt-dag'
 import type { IsoDate, ScheduleTask, Uuid } from '@/types/gantt'
 
+import { GanttAlerts } from './gantt-alerts'
 import { GanttGrid } from './gantt-grid'
+import { GanttHeader } from './gantt-header'
 import { TaskEditor } from './task-editor'
 import type { GanttEditIntent, GanttMutationError, GanttMutationResult } from './gantt-types'
 
@@ -30,11 +32,21 @@ export function GanttInteractive({
   initialScheduleError = null,
   onMutateTask,
 }: GanttInteractiveProps) {
+  // ---------------------------------------------------------------------------
+  // Schedule & selection state
+  // ---------------------------------------------------------------------------
   const [schedule, setSchedule] = useState<ScheduleTask[]>(initialSchedule)
   const [selectedTaskId, setSelectedTaskId] = useState<Uuid | null>(initialSchedule[0]?.id ?? null)
+
+  // ---------------------------------------------------------------------------
+  // Mutation lifecycle state
+  // ---------------------------------------------------------------------------
   const [saveError, setSaveError] = useState<GanttMutationError | null>(null)
   const [isMutating, setIsMutating] = useState(false)
 
+  // ---------------------------------------------------------------------------
+  // Derived state
+  // ---------------------------------------------------------------------------
   const blockingError = initialScheduleError
 
   const selectedTask = useMemo(
@@ -47,12 +59,9 @@ export function GanttInteractive({
     return cycle.length > 0 ? cycle.join(' -> ') : null
   }, [schedule])
 
-  const summary = useMemo(() => {
-    return selectedTask
-      ? `${selectedTask.nombre} · ${selectedTask.fechaInicio} → ${selectedTask.fechaFin}`
-      : 'Seleccioná una tarea para ver sus detalles.'
-  }, [selectedTask])
-
+  // ---------------------------------------------------------------------------
+  // Mutation callback — delegates to server action, reconciles schedule
+  // ---------------------------------------------------------------------------
   async function handleSubmit(payload: GanttEditIntent) {
     setIsMutating(true)
 
@@ -80,59 +89,35 @@ export function GanttInteractive({
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Render: blocking error state
+  // ---------------------------------------------------------------------------
   if (blockingError) {
     return (
       <div className="space-y-4 p-8">
         <h1 className="text-2xl font-bold">{obraNombre}</h1>
-        <p className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{blockingError}</p>
+        <GanttAlerts cycleWarning={null} saveError={null} isMutating={false} blockingError={blockingError} />
       </div>
     )
   }
 
+  // ---------------------------------------------------------------------------
+  // Render: main interactive layout
+  // ---------------------------------------------------------------------------
   return (
     <div className="space-y-4 p-8">
-      <header className="space-y-1">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-bold">{obraNombre}</h1>
-            <p className="text-sm text-gray-600">Proyecto: {projectId}</p>
-            <p className="text-sm text-gray-600">{summary}</p>
-          </div>
-          <a
-            href={printHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-          >
-            Exportar PDF/Imprimir
-          </a>
-        </div>
-      </header>
+      <GanttHeader
+        obraNombre={obraNombre}
+        projectId={projectId}
+        selectedTask={selectedTask}
+        printHref={printHref}
+      />
 
-      {cycleWarning ? (
-        <p className="rounded border border-red-200 bg-red-50 p-2 text-sm text-red-700">
-          Dependencia circular detectada: {cycleWarning}
-        </p>
-      ) : null}
-
-      {saveError ? (
-        <p className="rounded border border-red-200 bg-red-50 p-2 text-sm text-red-700">
-          {saveError.message}
-        </p>
-      ) : null}
-
-      {isMutating ? (
-        <p
-          role="status"
-          aria-live="polite"
-          className="rounded border border-blue-200 bg-blue-50 p-2 text-sm text-blue-700"
-        >
-          Guardando cambios en el cronograma...
-        </p>
-      ) : null}
+      <GanttAlerts cycleWarning={cycleWarning} saveError={saveError} isMutating={isMutating} />
 
       <div className="grid gap-4 xl:grid-cols-[360px_1fr]">
         <TaskEditor
+          mode="edit"
           tasks={schedule}
           selectedTaskId={selectedTaskId}
           selectedTask={selectedTask}
@@ -140,7 +125,7 @@ export function GanttInteractive({
           error={saveError?.message ?? null}
           onSelectTask={setSelectedTaskId}
           onSubmit={handleSubmit}
-          onCancelIntent={() => setSaveError(null)}
+          onCancel={() => setSaveError(null)}
         />
 
         <GanttGrid

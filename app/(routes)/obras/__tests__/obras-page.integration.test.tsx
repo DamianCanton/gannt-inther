@@ -38,6 +38,14 @@ vi.mock('@/lib/supabase/server', () => ({
 
 vi.mock('next/navigation', () => ({
   redirect: redirectMock,
+  useRouter: () => ({
+    refresh: vi.fn(),
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    prefetch: vi.fn(),
+  }),
 }))
 
 describe('/obras route integration', () => {

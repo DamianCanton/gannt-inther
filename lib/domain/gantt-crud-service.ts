@@ -2,6 +2,7 @@ import 'server-only'
 
 import { detectCycle } from '@/lib/gantt-dag'
 import type { ObraSchedule, TaskDependency, TaskInput, Uuid } from '@/types/gantt'
+import type { SmartInsertPayload } from '@/components/gantt/gantt-types'
 
 export type TaskMutationIntent = 'create' | 'update' | 'delete'
 
@@ -31,6 +32,7 @@ export type CreateTaskCommand = {
   nombre: string
   duracionDias: number
   dependeDeId: Uuid | null
+  smartInsert?: SmartInsertPayload
 }
 
 export type UpdateTaskCommand = {
@@ -39,7 +41,8 @@ export type UpdateTaskCommand = {
   taskId: Uuid
   nombre?: string
   duracionDias?: number
-  dependeDeId?: Uuid | null
+  dependeDeId: Uuid | null
+  smartInsert?: SmartInsertPayload
 }
 
 export type DeleteTaskCommand = {
@@ -57,6 +60,7 @@ export interface PreparedTaskMutation {
     nombre?: string
     duracion_dias?: number
     depende_de_id?: Uuid | null
+    smart_insert?: SmartInsertPayload
   }
   previewTasks: TaskInput[]
   canonicalDependencies: TaskDependency[]
@@ -137,7 +141,22 @@ export class GanttCrudService {
         dependeDeId: command.dependeDeId,
       })
 
-      const nextOrden = schedule.tasks.reduce((maxOrden, task) => Math.max(maxOrden, task.orden), 0) + 1
+      // Determine the orden for the new task.
+      // When smartInsert is present, the task is placed at a specific position
+      // (right after the parent for 'branch', right at the child's position for 'insert')
+      // and subsequent tasks are shifted down by 1.
+      let nextOrden: number
+
+      if (command.smartInsert) {
+        // En ambas estrategias (insert o branch), visualmente la tarea nueva
+        // debe aparecer JUSTO ABAJO del padre (parent.orden + 1).
+        // Así no se va "al fondo" ni a la posición lejana del hijo.
+        const conflictParent = schedule.tasks.find((t) => t.id === command.smartInsert!.conflictParentId)
+        nextOrden = conflictParent ? conflictParent.orden + 1 : schedule.tasks.reduce((maxOrden, task) => Math.max(maxOrden, task.orden), 0) + 1
+      } else {
+        nextOrden = schedule.tasks.reduce((maxOrden, task) => Math.max(maxOrden, task.orden), 0) + 1
+      }
+
       const createdTask: TaskInput = {
         id: createdTaskId,
         projectId: schedule.obra.projectId,
@@ -148,7 +167,14 @@ export class GanttCrudService {
         orden: nextOrden,
       }
 
-      const previewTasks = [...schedule.tasks, createdTask]
+      // When smartInsert is active, shift orden of all tasks >= new_orden by 1.
+      const shiftedTasks = command.smartInsert
+        ? schedule.tasks.map((task) =>
+            task.orden >= nextOrden ? { ...task, orden: task.orden + 1 } : task
+          )
+        : schedule.tasks
+
+      const previewTasks = [...shiftedTasks, createdTask]
       this.assertNoCycle(previewTasks)
 
       return {
@@ -158,6 +184,7 @@ export class GanttCrudService {
           nombre,
           duracion_dias: duracionDias,
           depende_de_id: command.dependeDeId,
+          smart_insert: command.smartInsert,
         },
         previewTasks,
         canonicalDependencies: this.buildCanonicalDependencies(previewTasks),
@@ -207,6 +234,7 @@ export class GanttCrudService {
         nombre,
         duracion_dias: duracionDias,
         depende_de_id: dependeDeId,
+        smart_insert: command.smartInsert,
       },
       previewTasks,
       canonicalDependencies: this.buildCanonicalDependencies(previewTasks),

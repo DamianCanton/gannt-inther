@@ -18,6 +18,14 @@ const { redirectMock, sessionState, signInMock } = vi.hoisted(() => ({
 
 vi.mock('next/navigation', () => ({
   redirect: redirectMock,
+  useRouter: () => ({
+    refresh: vi.fn(),
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    prefetch: vi.fn(),
+  }),
 }))
 
 vi.mock('@/lib/supabase/server', () => ({

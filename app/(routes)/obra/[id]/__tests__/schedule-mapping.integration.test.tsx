@@ -71,7 +71,7 @@ describe('schedule mapping integration', () => {
     render(<PrintTimelineTable obra={repoLikeSchedule} />)
 
     expect(screen.getByText('Obra Integración')).toBeTruthy()
-    expect(screen.getByText('Escala: Diaria')).toBeTruthy()
+    expect(screen.getByText(/Escala diaria/)).toBeTruthy()
   })
 
   it('reuses shared timeline contract daily/weekly boundaries for print parity', () => {

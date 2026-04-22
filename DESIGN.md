@@ -1,61 +1,76 @@
 # Gantt Internal Management System — DESIGN.md
 
-## 1. Filosofía de Diseño
-El sistema utiliza una estética fuertemente inspirada en **Vercel** y **Linear.app**, fusionada con los colores corporativos de la marca. 
-- **Objetivo:** Precisión técnica, alta legibilidad, foco en la productividad y una interfaz "limpia" que no abrume al usuario.
-- **Regla de Oro:** El contenido y los datos (diagramas, listados) son los protagonistas. Los formularios complejos y acciones secundarias deben vivir en Modales (Dialogs) o Drawers para no contaminar la vista principal.
+## 1. Filosofía de Diseño: "Data-Dense Minimalism"
+El sistema fusiona la estética técnica de **Linear.app** con la modularidad de los dashboards modernos premiados (estilo Bento UI).
+- **Objetivo:** Precisión técnica absoluta. El usuario (Project Manager) necesita ver mucha información de un vistazo sin sentirse abrumado.
+- **Regla de Oro:** Funcionalidad sobre decoración. Cero elementos superfluos. Formularios complejos, historiales y acciones destructivas viven en Drawers (paneles laterales) o Modales para no perder el contexto de la vista principal.
 
-## 2. Paleta de Colores y Tokens
+## 2. Paleta de Colores y Tokens (INTHER Brand)
 
-### Brand Colors (Definidos en Tailwind)
-- **Primary (`bg-primary`, `text-primary`):** Usado para los Call to Action (CTA) principales, botones de confirmación, y acentos visuales clave.
-- **Accent (`bg-accent`, `text-accent`):** Usado para estados secundarios o distintivos de la marca.
+El sistema de diseño usa un alto contraste entre la barra lateral corporativa y el lienzo de trabajo ultra-limpio.
 
-### Escala de Grises (Vercel/Linear style)
-- **Backgrounds:** `bg-gray-50/30` para fondos de página (App Shell). `bg-white` para tarjetas, modales y contenedores de contenido.
-- **Textos:** 
-  - Títulos: `text-gray-900`
-  - Cuerpo: `text-gray-600`
-  - Metadatos/Secundarios: `text-gray-500` o `text-gray-400`
+### Brand Colors (Tailwind Config)
+- **Primary (`bg-primary`, `#263a54`):** Azul marino profundo. Color de la sidebar, navegación y elementos estructurales.
+- **Accent (`bg-accent`, `#f69323`):** Naranja INTHER. Color de acción. Usado SOLO para el "Happy Path" (ej. "Crear obra", "Exportar PDF"). No abusar para no diluir su peso.
+- **Hover/Selección:** `bg-accent/10` o `bg-primary/10` para estados de selección suaves.
 
-## 3. Bordes, Sombras y Formas
+### Escala de Grises y Superficies
+- **Canvas (Fondo App):** `bg-gray-50/50`. Apenas un respiro para que las tarjetas destaquen.
+- **Superficies (Cards/Paneles):** `bg-white`.
+- **Textos:** - Títulos/Métricas clave: `text-gray-900`
+  - Cuerpo/Labels: `text-gray-600`
+  - Metadatos/Fechas/Estados atenuados: `text-gray-400`
 
-- **Bordes ultra sutiles:** Nunca usar negro puro para bordes. El estándar es `border-gray-200/80` o `border-gray-200`.
-- **Sombras elegantes:** 
-  - Cards e Inputs: `shadow-xs`
-  - Hover states: `shadow-sm`
-  - Modales/Dropdowns: `shadow-lg ring-1 ring-black/5`
-- **Redondeo (Border Radius):** 
-  - Inputs y Botones pequeños: `rounded-md`
-  - Cards y Contenedores medios: `rounded-lg` o `rounded-xl`
-  - Modales: `rounded-xl` o `rounded-2xl`
+## 3. Arquitectura Visual: Bento Grid y Sombras
 
-## 4. Tipografía y Datos
+Para la vista de Dashboard, abandonamos el listado simple. Usaremos un sistema de grilla (Bento) donde cada card tiene un peso visual basado en su importancia.
 
-- **Títulos:** Usar `tracking-tight` (letter-spacing negativo sutil) para dar un look moderno tipo SaaS. Ej: `text-[15px] font-semibold tracking-tight`.
-- **Números (CRÍTICO):** Todos los números, fechas, contadores de tareas e IDs deben usar la clase `tabular-nums`. Esto evita que los anchos de los caracteres bailen cuando cambian los valores.
-- **Jerarquía:** Mantener tamaños controlados. No abusar de `text-2xl` o mayores a menos que sea un hero header. El estándar SaaS es `text-[13px]` para cuerpo y `text-[14px]/[15px]` para elementos importantes.
+- **Bordes ultra sutiles:** El estándar es `border-gray-200`. NUNCA negro translúcido.
+- **Sombras arquitectónicas:** - Cards base: `shadow-sm`
+  - Hover en elementos clickeables: `shadow-md transition-shadow duration-200`
+  - Dropdowns/Modales: `shadow-xl ring-1 ring-black/5`
+- **Radios (Border Radius):** - Estándar global: `rounded-xl` para contenedores principales (suaviza la rigidez del Gantt).
+  - Componentes internos (botones, badges): `rounded-lg`.
 
-## 5. Estados Interactivos (Focus & Hover)
+## 4. Tipografía y Densidad de Datos
 
-- **Focus Rings:** Todo elemento interactivo debe tener un anillo de foco visible para accesibilidad (WCAG), pero elegante. 
-  - Estándar: `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/50`.
-- **Hover en Cards:** En lugar de levantar la tarjeta violentamente, oscurecer sutilmente el borde (`hover:border-primary/30`) o mostrar una línea de acento sutil (`via-primary/40`).
-- **Botones Secundarios:** Usar estilo "ghost" (`hover:bg-gray-100 text-gray-700`) en lugar de botones con fondo sólido para no competir con el Primary CTA.
+- **Títulos y Métricas:** Usar `tracking-tight` (letter-spacing: -0.025em). Los números de contadores globales deben ser grandes y audaces (ej. `text-3xl font-bold tracking-tighter`).
+- **Números (CRÍTICO):** Fechas, duraciones e IDs llevan `tabular-nums font-mono text-[13px]`. Es innegociable en un Gantt para alinear columnas matemáticamente.
+- **Jerarquía SaaS:** - Header de vista: `text-[18px] font-semibold`.
+  - Título de card (Obra): `text-[14px] font-medium`.
+  - Metadatos (Cliente, Inicio): `text-[12px] uppercase tracking-wider text-gray-500`.
 
-## 6. Patrones de Componentes
+## 5. Estados Interactivos y Micro-interacciones
 
-### 6.1. Empty States (Estados Vacíos)
-- Deben tener un borde punteado (`border-dashed border-gray-300`).
-- Incluir un ícono SVG claro y descriptivo en el centro (tono `text-gray-400`).
-- Texto explicativo y un **Primary CTA** visible para salir del estado vacío (ej. "Crear diagrama nuevo").
+- **Focus Rings:** `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inther-orange/40 focus-visible:border-inther-orange`.
+- **Interacción de Cards (Dashboard):** - Hover: El borde muta a `hover:border-gray-300`, y un sutil desplazamiento `hover:-translate-y-[2px]` (usar con moderación, solo en cards que sean links a la obra).
+- **Badges de Estado:** Usar fondos suaves con texto fuerte. Ej: `bg-blue-50 text-blue-700 ring-1 ring-blue-600/10` para "En progreso".
 
-### 6.2. Modales (Dialogs)
-- **Fondo:** El overlay debe usar un desenfoque sutil (`backdrop-blur-[2px] bg-black/20`).
-- **Comportamiento:** Deben cerrarse con la tecla `Escape` y al hacer clic afuera (si no hay datos sin guardar).
-- **Acciones:** Los botones del footer del modal deben ir alineados a la derecha, con la acción principal destacada (`bg-primary`) y la secundaria atenuada.
+## 6. Patrones de Componentes Core
 
-### 6.3. Manejo de Errores
-- **Nunca redirigir:** Evitar redirecciones con `?error=X` en la URL. 
-- Usar el patrón `ActionResponse` (Server Actions que devuelven `{ success, error }`).
-- Mostrar los errores inline, cerca de donde ocurrió la acción, con un ícono de warning rojo y texto en `text-red-600 text-[13px]`.
+### 6.1. Layout Base (App Shell)
+Sidebar fijo a la izquierda (Navy). Topbar minimalista (breadcrumbs y avatar). Área principal con `max-w-7xl mx-auto px-6 py-8` para contener la grilla.
+
+### 6.2. Drawers (Slide-overs) sobre Modales
+Para gestionar la información de una Obra (que eventualmente tendrá muchas tareas y adjuntos), usar Drawers que entran desde la derecha en lugar de Modales centrales. Mantienen el contexto visual del Gantt de fondo.
+- **Fondo:** `backdrop-blur-sm bg-gray-900/20`.
+
+### 6.3. Empty States y Errores
+- Bordes punteados (`border-dashed border-gray-300`), íconos en `text-gray-400`.
+- Errores en Server Actions renderizados inline, NUNCA en alertas invasivas del navegador.
+
+## 7. Referencias para el Setup de Tailwind (Config real del proyecto)
+```javascript
+// tailwind.config.js
+module.exports = {
+  theme: {
+    extend: {
+      colors: {
+        primary: '#263a54',   // Navy INTHER — sidebar, estructural
+        accent: '#f69323',    // Naranja INTHER — acción, happy path
+        text: '#333333',
+        background: '#ffffff',
+      }
+    }
+  }
+}

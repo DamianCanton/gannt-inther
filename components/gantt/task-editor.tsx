@@ -1,56 +1,95 @@
 'use client'
 
-import { type FormEvent, useMemo, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { detectSmartInsertConflict, type SmartInsertConflict } from '@/lib/domain/smart-insert'
 import type { ScheduleTask, Uuid } from '@/types/gantt'
 
-import type { GanttEditIntent, GanttEditorMode } from './gantt-types'
+import type { GanttEditIntent, GanttEditorMode, SmartInsertPayload } from './gantt-types'
+import { SmartInsertModal, type SmartInsertConflictInfo } from './smart-insert-modal'
 
-export interface TaskEditorProps {
+// ---------------------------------------------------------------------------
+// Discriminated union props for TaskEditor
+// ---------------------------------------------------------------------------
+
+interface TaskEditorCreateProps {
+  mode: 'create'
+  tasks: ScheduleTask[]
+  selectedTaskId?: never
+  selectedTask?: never
+  onSelectTask?: never
+}
+
+interface TaskEditorEditProps {
+  mode: 'edit'
   tasks: ScheduleTask[]
   selectedTaskId: Uuid | null
   selectedTask: ScheduleTask | null
+  onSelectTask: (taskId: Uuid | null) => void
+}
+
+export type TaskEditorProps = (TaskEditorCreateProps | TaskEditorEditProps) & {
   disabled?: boolean
   pending?: boolean
   error?: string | null
   onSubmit: (payload: GanttEditIntent) => Promise<{ error?: string } | void>
-  onSelectTask: (taskId: Uuid | null) => void
-  onCancelIntent?: () => void
+  onCancel?: () => void
+  onDelete?: (taskId: Uuid) => void
 }
 
-function getSubmitLabel(mode: GanttEditorMode): string {
-  if (mode === 'create') {
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function getSubmitLabel(intent: GanttEditorMode): string {
+  if (intent === 'create') {
     return 'Crear tarea'
   }
 
-  if (mode === 'delete') {
+  if (intent === 'delete') {
     return 'Eliminar tarea'
   }
 
   return 'Guardar cambios'
 }
 
-export function TaskEditor({
-  tasks,
-  selectedTaskId,
-  selectedTask,
-  disabled = false,
-  pending = false,
-  error,
-  onSubmit,
-  onSelectTask,
-  onCancelIntent,
-}: TaskEditorProps) {
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+export function TaskEditor(props: TaskEditorProps) {
+  const {
+    mode,
+    tasks,
+    disabled = false,
+    pending = false,
+    error: externalError,
+    onSubmit,
+    onCancel,
+    onDelete,
+  } = props
+
+  // In edit mode, derive values from props
+  const selectedTaskId = mode === 'edit' ? props.selectedTaskId : undefined
+  const selectedTask = mode === 'edit' ? props.selectedTask : undefined
+  const onSelectTask = mode === 'edit' ? props.onSelectTask : undefined
+
+  // Internal form state
   const [intent, setIntent] = useState<GanttEditorMode>('create')
   const [nombre, setNombre] = useState('')
   const [duracionDias, setDuracionDias] = useState(1)
   const [dependeDeId, setDependeDeId] = useState<Uuid | ''>('')
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [localError, setLocalError] = useState<string | null>(error ?? null)
+  const [localError, setLocalError] = useState<string | null>(externalError ?? null)
   const [saving, setSaving] = useState(false)
 
+  // Smart insert conflict resolution state
+  const [pendingConflict, setPendingConflict] = useState<SmartInsertConflict | null>(null)
+  const [pendingPayload, setPendingPayload] = useState<GanttEditIntent | null>(null)
+
+  // Predecessor candidates for the dependency select
   const predecessorCandidates = useMemo(() => {
     if (intent === 'create') {
       return tasks
@@ -63,6 +102,7 @@ export function TaskEditor({
     return tasks.filter((task) => task.id !== selectedTask.id)
   }, [tasks, selectedTask, intent])
 
+  // Sync form fields from a task seed
   function syncFormFromTask(task: ScheduleTask | null) {
     if (!task) {
       setNombre('')
@@ -76,26 +116,38 @@ export function TaskEditor({
     setDependeDeId(task.dependeDeId ?? '')
   }
 
+  // When selectedTask changes externally (from GanttInteractive), sync the form
+  useEffect(() => {
+    if (intent !== 'create') {
+      syncFormFromTask(selectedTask ?? null)
+    }
+    // We only react to external task selection changes, not internal intent changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTask?.id])
+
+  // Switch the internal action intent
   function startIntent(nextIntent: GanttEditorMode) {
     setIntent(nextIntent)
     setConfirmDelete(false)
     setLocalError(null)
 
     if (nextIntent === 'create') {
-      onSelectTask(null)
+      onSelectTask?.(null)
       syncFormFromTask(null)
       return
     }
 
-    syncFormFromTask(selectedTask)
+    syncFormFromTask(selectedTask ?? null)
   }
 
+  // Handle task selection from the dropdown
   function handleSelectTask(taskId: string) {
     const nextTask = tasks.find((task) => task.id === taskId) ?? null
-    onSelectTask(nextTask?.id ?? null)
+    onSelectTask?.(nextTask?.id ?? null)
     syncFormFromTask(nextTask)
   }
 
+  // Handle the form submit flow
   async function submitForm(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -131,10 +183,14 @@ export function TaskEditor({
     }
     const activeTaskId = activeTask?.id
 
-    setSaving(true)
-    setLocalError(null)
+    // If delete mode with onDelete callback, delegate to parent
+    if (intent === 'delete' && onDelete && activeTaskId) {
+      onDelete(activeTaskId)
+      return
+    }
 
-    const payload: GanttEditIntent =
+    // Build the base payload
+    const basePayload: GanttEditIntent =
       intent === 'create'
         ? {
             intent: 'create',
@@ -155,6 +211,30 @@ export function TaskEditor({
               taskId: activeTaskId as Uuid,
             }
 
+    // Smart insert conflict detection (only for create/update with a dependency)
+    if (intent !== 'delete' && dependeDeId) {
+      const conflict = detectSmartInsertConflict({
+        parentId: dependeDeId,
+        tasks,
+        excludeTaskId: intent === 'update' ? activeTaskId : undefined,
+      })
+
+      if (conflict) {
+        // Store the pending payload and show the resolution modal
+        setPendingPayload(basePayload)
+        setPendingConflict(conflict)
+        return
+      }
+    }
+
+    await submitPayload(basePayload)
+  }
+
+  // Submit a payload to the parent
+  async function submitPayload(payload: GanttEditIntent) {
+    setSaving(true)
+    setLocalError(null)
+
     try {
       const result = await onSubmit(payload)
 
@@ -170,11 +250,11 @@ export function TaskEditor({
       }
 
       if (intent !== 'create') {
-        syncFormFromTask(selectedTask)
+        syncFormFromTask(selectedTask ?? null)
       }
 
       setConfirmDelete(false)
-      onCancelIntent?.()
+      onCancel?.()
     } catch {
       setLocalError(
         intent === 'create'
@@ -188,8 +268,42 @@ export function TaskEditor({
     }
   }
 
-  const mergedError = error ?? localError
+  // Handle smart insert strategy confirmation from the modal
+  const handleSmartInsertConfirm = useCallback(
+    async (strategy: 'insert' | 'branch') => {
+      if (!pendingPayload || !pendingConflict) {
+        return
+      }
 
+      const smartInsert: SmartInsertPayload = {
+        strategy,
+        conflictParentId: pendingConflict.parentId,
+        conflictChildId: pendingConflict.childId,
+      }
+
+      // Inject smartInsert into the pending payload
+      const resolvedPayload: GanttEditIntent =
+        pendingPayload.intent === 'create'
+          ? { ...pendingPayload, smartInsert }
+          : pendingPayload.intent === 'update'
+            ? { ...pendingPayload, smartInsert }
+            : pendingPayload
+
+      setPendingConflict(null)
+      setPendingPayload(null)
+
+      await submitPayload(resolvedPayload)
+    },
+    [pendingPayload, pendingConflict]
+  )
+
+  // Handle smart insert modal cancel
+  const handleSmartInsertCancel = useCallback(() => {
+    setPendingConflict(null)
+    setPendingPayload(null)
+  }, [])
+
+  const mergedError = externalError ?? localError
   const isPending = saving || pending
 
   return (
@@ -203,7 +317,16 @@ export function TaskEditor({
           <h2 className="text-lg font-semibold">Editor de tarea</h2>
           <p className="text-sm text-gray-500">Los cambios se envían como intents al servidor.</p>
         </div>
-        <Button type="button" variant="ghost" disabled={disabled || isPending} onClick={() => onSelectTask(null)}>
+        <Button
+          type="button"
+          variant="ghost"
+          disabled={disabled || isPending}
+          onClick={() => {
+            onSelectTask?.(null)
+            syncFormFromTask(null)
+            onCancel?.()
+          }}
+        >
           Limpiar
         </Button>
       </div>
@@ -211,15 +334,15 @@ export function TaskEditor({
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium text-gray-700">Acción</legend>
         <div className="flex flex-wrap gap-2">
-          {(['create', 'update', 'delete'] as const).map((mode) => (
+          {(['create', 'update', 'delete'] as const).map((modeOption) => (
             <Button
-              key={mode}
+              key={modeOption}
               type="button"
-              variant={intent === mode ? 'secondary' : 'ghost'}
+              variant={intent === modeOption ? 'secondary' : 'ghost'}
               disabled={disabled || isPending}
-              onClick={() => startIntent(mode)}
+              onClick={() => startIntent(modeOption)}
             >
-              {mode === 'create' ? 'Crear' : mode === 'update' ? 'Editar' : 'Eliminar'}
+              {modeOption === 'create' ? 'Crear' : modeOption === 'update' ? 'Editar' : 'Eliminar'}
             </Button>
           ))}
         </div>
@@ -250,7 +373,7 @@ export function TaskEditor({
           aria-label="Nombre"
           value={nombre}
           onChange={(event) => setNombre(event.target.value)}
-          disabled={disabled || isPending || intent !== 'create' && !selectedTask}
+          disabled={disabled || isPending || (intent !== 'create' && !selectedTask)}
         />
       ) : null}
 
@@ -262,7 +385,7 @@ export function TaskEditor({
           min={1}
           value={duracionDias}
           onChange={(event) => setDuracionDias(Number(event.target.value || 1))}
-          disabled={disabled || isPending || intent !== 'create' && !selectedTask}
+          disabled={disabled || isPending || (intent !== 'create' && !selectedTask)}
         />
       ) : null}
 
@@ -273,7 +396,7 @@ export function TaskEditor({
             className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
             value={dependeDeId}
             onChange={(event) => setDependeDeId(event.target.value)}
-            disabled={disabled || isPending || intent !== 'create' && !selectedTask}
+            disabled={disabled || isPending || (intent !== 'create' && !selectedTask)}
           >
             <option value="">Sin dependencia</option>
             {predecessorCandidates.map((task) => (
@@ -311,7 +434,9 @@ export function TaskEditor({
 
       <Button
         type="submit"
-        disabled={disabled || isPending || (intent !== 'create' && !selectedTask) || (intent === 'delete' && !confirmDelete)}
+        disabled={
+          disabled || isPending || (intent !== 'create' && !selectedTask) || (intent === 'delete' && !confirmDelete)
+        }
       >
         {isPending
           ? intent === 'create'
@@ -321,6 +446,15 @@ export function TaskEditor({
               : 'Eliminando...'
           : getSubmitLabel(intent)}
       </Button>
+
+      {pendingConflict ? (
+        <SmartInsertModal
+          conflict={{ parentName: pendingConflict.parentName, childName: pendingConflict.childName }}
+          onConfirm={handleSmartInsertConfirm}
+          onCancel={handleSmartInsertCancel}
+          isPending={saving}
+        />
+      ) : null}
     </form>
   )
 }

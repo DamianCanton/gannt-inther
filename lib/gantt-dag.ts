@@ -178,13 +178,26 @@ export function resolveDependencies(
     })
   }
 
-  return sorted.map((task) => {
+  const scheduledTasks = sorted.map((task) => {
     const result = scheduled.get(task.id)
     if (!result) {
       throw new Error(`Unable to schedule task ${task.id}`)
     }
     return result
   })
+
+  // Sort by fechaInicio (chronological) then by orden (original insertion order).
+  // This ensures tasks that start earlier appear first in the visual Gantt chart,
+  // even if they were created later with a higher orden value.
+  scheduledTasks.sort((a, b) => {
+    const dateCompare = a.fechaInicio.localeCompare(b.fechaInicio)
+    if (dateCompare !== 0) {
+      return dateCompare
+    }
+    return a.orden - b.orden
+  })
+
+  return scheduledTasks
 }
 
 /**

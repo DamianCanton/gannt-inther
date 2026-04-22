@@ -17,7 +17,7 @@ export default function ObrasLoading() {
               className="h-10 animate-pulse rounded border border-gray-200 bg-gray-100"
             />
           ))}
-          <div className="h-10 animate-pulse rounded bg-blue-100 md:col-span-2" />
+          <div className="h-10 animate-pulse rounded bg-primary/10 md:col-span-2" />
         </div>
       </div>
 

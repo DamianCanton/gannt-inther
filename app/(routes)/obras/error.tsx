@@ -16,7 +16,7 @@ export default function ObrasError({
 }) {
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-6">Obras</h1>
+      <h1 className="text-[18px] font-semibold tracking-tight mb-6">Obras</h1>
       <div className="rounded border border-red-200 bg-red-50 p-6">
         <h2 className="text-lg font-semibold text-red-800">
           No se pudieron cargar las obras

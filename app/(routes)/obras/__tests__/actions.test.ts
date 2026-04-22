@@ -90,7 +90,7 @@ describe('obras actions', () => {
       expect(createObraFromTemplateMock).toHaveBeenCalledWith(
         expect.objectContaining({
           projectId: 'project-auth',
-          nombre: 'Obra nueva',
+          nombre: 'Obra Nueva',
           tipoObra: 'Tipo A',
         })
       )

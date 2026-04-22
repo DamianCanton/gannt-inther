@@ -10,8 +10,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
-  // No mostramos el AppShell en páginas de login
-  if (pathname?.startsWith('/auth')) {
+  // No mostramos el AppShell en páginas de login o impresión
+  if (pathname?.startsWith('/auth') || pathname?.endsWith('/print')) {
     return <>{children}</>;
   }
 

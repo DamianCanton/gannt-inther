@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import type { ActionResponse } from '@/app/(routes)/obras/actions'
 
 export interface CreateObraFormProps {
@@ -101,22 +102,16 @@ export function CreateObraForm({ action, disabled = false, onSuccess }: CreateOb
           disabled={isPending || disabled}
           className="border-gray-200/80 bg-white shadow-xs text-[13px] focus-visible:ring-primary/30 focus-visible:border-primary/50"
         />
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="tipoObra" className="text-[13px] font-medium text-gray-700">
-            Tipo de obra
-          </label>
-          <select
-            id="tipoObra"
-            name="tipoObra"
-            className="rounded-lg border border-gray-200/80 bg-white px-3 py-2 text-[13px] text-gray-900 shadow-xs transition-colors focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 disabled:opacity-50 disabled:cursor-not-allowed"
-            defaultValue="Tipo A"
-            disabled={isPending || disabled}
-          >
-            <option value="Tipo A">Tipo A</option>
-            <option value="Tipo B">Tipo B</option>
-            <option value="Tipo C">Tipo C</option>
-          </select>
-        </div>
+        <Select
+          name="tipoObra"
+          label="Tipo de obra"
+          defaultValue="Tipo A"
+          disabled={isPending || disabled}
+        >
+          <option value="Tipo A">Tipo A</option>
+          <option value="Tipo B">Tipo B</option>
+          <option value="Tipo C">Tipo C</option>
+        </Select>
         <Input
           name="vigenciaTexto"
           label="Vigencia"

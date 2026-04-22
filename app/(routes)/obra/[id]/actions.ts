@@ -11,7 +11,7 @@ import { AuthContextError, requireAuthContext } from '@/lib/auth/auth-context'
 import { GanttRepo, RepoAccessError } from '@/lib/repositories/gantt-repo'
 import { createServerClient } from '@/lib/supabase/server'
 import type { Uuid } from '@/types/gantt'
-import type { GanttMutationResult } from '@/components/gantt/gantt-types'
+import type { GanttMutationResult, SmartInsertPayload } from '@/components/gantt/gantt-types'
 
 export type MutateTaskInput = {
   obraId: Uuid
@@ -22,13 +22,15 @@ export type MutateTaskInput = {
       nombre: string
       duracionDias: number
       dependeDeId: Uuid | null
+      smartInsert?: SmartInsertPayload
     }
   | {
       intent: 'update'
       taskId: Uuid
       nombre?: string
       duracionDias?: number
-      dependeDeId?: Uuid | null
+      dependeDeId: Uuid | null
+      smartInsert?: SmartInsertPayload
     }
   | {
       intent: 'delete'
@@ -152,6 +154,7 @@ export async function saveTaskChange(input: {
   nombre: string
   duracionDias: number
   dependeDeId: Uuid | null
+  smartInsert?: SmartInsertPayload
 }): Promise<GanttMutationResult> {
   return mutateTask({
     intent: 'update',
@@ -160,5 +163,6 @@ export async function saveTaskChange(input: {
     nombre: input.nombre,
     duracionDias: input.duracionDias,
     dependeDeId: input.dependeDeId,
+    smartInsert: input.smartInsert,
   })
 }
