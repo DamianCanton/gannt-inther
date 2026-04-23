@@ -128,12 +128,14 @@ export function GanttInteractive({
           onCancel={() => setSaveError(null)}
         />
 
-        <GanttGrid
-          tasks={schedule}
-          obraStartDate={obraStartDate}
-          selectedTaskId={selectedTaskId}
-          onSelectTask={setSelectedTaskId}
-        />
+        <div className="min-w-0">
+          <GanttGrid
+            tasks={schedule}
+            obraStartDate={obraStartDate}
+            selectedTaskId={selectedTaskId}
+            onSelectTask={setSelectedTaskId}
+          />
+        </div>
       </div>
     </div>
   )
