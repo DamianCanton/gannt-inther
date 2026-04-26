@@ -4,7 +4,8 @@ export interface GanttHeaderProps {
   obraNombre: string
   projectId: Uuid
   selectedTask: ScheduleTask | null
-  printHref: string
+  onOpenExpandedView: () => void
+  onOpenPrintOptions: () => void
 }
 
 function buildSummary(task: ScheduleTask | null): string {
@@ -15,7 +16,13 @@ function buildSummary(task: ScheduleTask | null): string {
   return `${task.nombre} · ${task.fechaInicio} → ${task.fechaFin}`
 }
 
-export function GanttHeader({ obraNombre, projectId, selectedTask, printHref }: GanttHeaderProps) {
+export function GanttHeader({
+  obraNombre,
+  projectId,
+  selectedTask,
+  onOpenExpandedView,
+  onOpenPrintOptions,
+}: GanttHeaderProps) {
   const summary = buildSummary(selectedTask)
 
   return (
@@ -26,14 +33,22 @@ export function GanttHeader({ obraNombre, projectId, selectedTask, printHref }: 
           <p className="text-sm text-gray-600">Proyecto: {projectId}</p>
           <p className="text-sm text-gray-600">{summary}</p>
         </div>
-        <a
-          href={printHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-        >
-          Exportar PDF/Imprimir
-        </a>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={onOpenExpandedView}
+            className="inline-flex items-center rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          >
+            Ver gráfico ampliado
+          </button>
+          <button
+            type="button"
+            onClick={onOpenPrintOptions}
+            className="inline-flex items-center rounded border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          >
+            Exportar PDF/Imprimir
+          </button>
+        </div>
       </div>
     </header>
   )

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import PrintPage from '@/app/(routes)/obra/[id]/print/page'
 import { AuthContextError } from '@/lib/auth/auth-context'
+import { serializePrintConfig } from '@/components/gantt/print-projection'
 import type { ObraSchedule } from '@/types/gantt'
 
 const printMock = vi.hoisted(() => vi.fn())
@@ -139,5 +140,76 @@ describe('/obra/[id]/print route integration', () => {
     render(page)
 
     expect(screen.getByText(/Escala semanal/i)).toBeTruthy()
+  })
+
+  it('renders using PrintConfig projection instead of full raw tree', async () => {
+    ensureObraAccessMock.mockResolvedValue({ userId: 'u1', projectId: 'p1' })
+    getObraScheduleMock.mockResolvedValue({
+      obra: {
+        id: 'o1',
+        projectId: 'p1',
+        nombre: 'Obra Config',
+        cliente: null,
+        tipoObra: 'Tipo A',
+        fechaInicioGlobal: '2026-04-06',
+        vigenciaTexto: null,
+      },
+      tasks: [
+        {
+          id: 'P1',
+          projectId: 'p1',
+          obraId: 'o1',
+          nombre: 'Padre visible',
+          duracionDias: 2,
+          dependeDeId: null,
+          parentId: null,
+          offsetDias: 0,
+          orden: 1,
+        },
+        {
+          id: 'C1',
+          projectId: 'p1',
+          obraId: 'o1',
+          nombre: 'Subtarea visible',
+          duracionDias: 2,
+          dependeDeId: null,
+          parentId: 'P1',
+          offsetDias: 1,
+          orden: 2,
+        },
+        {
+          id: 'H1',
+          projectId: 'p1',
+          obraId: 'o1',
+          nombre: 'Oculta no visible',
+          duracionDias: 1,
+          dependeDeId: null,
+          parentId: null,
+          offsetDias: 0,
+          orden: 3,
+        },
+      ],
+      dependencies: [],
+      holidays: new Set(),
+    })
+
+    const config = serializePrintConfig({
+      selectionMode: 'visible',
+      includeVisibleSubtasks: false,
+      includeOneDayTasks: false,
+      expandAllBeforePrint: false,
+      visibleTaskIds: ['P1', 'C1'],
+      manualTaskIds: [],
+    })
+
+    const page = await PrintPage({
+      params: { id: 'o1' },
+      searchParams: { config },
+    })
+    render(page)
+
+    expect(screen.getByText('Padre visible')).toBeTruthy()
+    expect(screen.queryByText('Subtarea visible')).toBeNull()
+    expect(screen.queryByText('Oculta no visible')).toBeNull()
   })
 })

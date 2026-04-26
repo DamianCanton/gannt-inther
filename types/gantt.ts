@@ -17,6 +17,8 @@ export interface TaskInput {
   nombre: string;
   duracionDias: number;
   dependeDeId: Uuid | null;
+  parentId?: Uuid | null;
+  offsetDias?: number;
   orden: number;
 }
 
@@ -72,6 +74,31 @@ export interface ObraSchedule {
   tasks: TaskInput[];
   dependencies: TaskDependency[];
   holidays: Set<IsoDate>;
+}
+
+export type PrintSelectionMode = 'visible' | 'manual';
+
+/**
+ * Serializable print handoff contract passed from interactive UI to print route.
+ * It describes projection rules only (what to include), never visual scale.
+ */
+export interface PrintConfig {
+  selectionMode: PrintSelectionMode;
+  includeVisibleSubtasks: boolean;
+  includeOneDayTasks: boolean;
+  expandAllBeforePrint: boolean;
+  visibleTaskIds: Uuid[];
+  manualTaskIds: Uuid[];
+}
+
+export interface PrintTaskPayload {
+  id: Uuid;
+  nombre: string;
+  duracionDias: number;
+  fechaInicio: IsoDate;
+  fechaFin: IsoDate;
+  parentId: Uuid | null;
+  offsetDias: number;
 }
 
 // ============================================================

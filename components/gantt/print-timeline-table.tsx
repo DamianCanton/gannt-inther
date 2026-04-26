@@ -7,10 +7,12 @@ import {
   deriveTimelineScale,
   getTaskTimelineRange,
 } from '@/components/gantt/timeline-utils'
-import type { ObraSchedule, IsoDate } from '@/types/gantt'
+import { DEFAULT_PRINT_CONFIG, projectPrintableTasks } from '@/components/gantt/print-projection'
+import type { ObraSchedule, IsoDate, PrintConfig } from '@/types/gantt'
 
 export interface PrintTimelineTableProps {
   obra: ObraSchedule
+  printConfig?: PrintConfig
 }
 
 function formatDate(dateStr: IsoDate): string {
@@ -61,21 +63,26 @@ function computeMonthGroups(columns: { key: string; label: string }[]) {
   return groups
 }
 
-export function PrintTimelineTable({ obra }: PrintTimelineTableProps) {
+export function PrintTimelineTable({ obra, printConfig = DEFAULT_PRINT_CONFIG }: PrintTimelineTableProps) {
   const schedule = createSchedule({
     tasks: obra.tasks,
     dependencies: obra.dependencies,
     obraStartDate: obra.obra.fechaInicioGlobal,
     holidays: obra.holidays,
   })
-  const scaleMode = deriveTimelineScale(schedule, obra.obra.fechaInicioGlobal)
-  const columns = buildTimelineColumns({
+  const printableSchedule = projectPrintableTasks({
     tasks: schedule,
+    config: printConfig,
+  })
+
+  const scaleMode = deriveTimelineScale(printableSchedule, obra.obra.fechaInicioGlobal)
+  const columns = buildTimelineColumns({
+    tasks: printableSchedule,
     obraStartDate: obra.obra.fechaInicioGlobal,
     scale: scaleMode,
   })
 
-  const { firstStart, lastEnd } = computeObraDateRange(schedule)
+  const { firstStart, lastEnd } = computeObraDateRange(printableSchedule)
   const totalObraDays =
     firstStart && lastEnd ? countWorkingDays(firstStart, lastEnd, obra.holidays) : 0
 
@@ -134,7 +141,7 @@ export function PrintTimelineTable({ obra }: PrintTimelineTableProps) {
       ) : null}
 
       {/* ── Table ────────────────────────────────────────────── */}
-      {schedule.length === 0 ? (
+      {printableSchedule.length === 0 ? (
         <div className="print-empty">
           No hay tareas imprimibles para esta obra.
         </div>
@@ -182,7 +189,7 @@ export function PrintTimelineTable({ obra }: PrintTimelineTableProps) {
             </tr>
           </thead>
           <tbody>
-            {schedule.map((task, rowIdx) => (
+            {printableSchedule.map((task, rowIdx) => (
               <tr key={task.id} className="print-row">
                 <td className="print-gantt-table__task-name">{task.nombre}</td>
                 <td className="print-gantt-table__task-dur">{task.duracionDias}</td>

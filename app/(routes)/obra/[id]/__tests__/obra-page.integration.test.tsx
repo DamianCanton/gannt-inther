@@ -158,8 +158,8 @@ describe('/obra/[id] route integration', () => {
     render(page)
 
     expect(screen.getByText('Obra Autorizada')).toBeTruthy()
-    const exportLink = screen.getByRole('link', { name: 'Exportar PDF/Imprimir' })
-    expect(exportLink.getAttribute('href')).toBe('/obra/o1/print')
+    expect(screen.getByRole('button', { name: 'Ver gráfico ampliado' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Exportar PDF/Imprimir' })).toBeTruthy()
     expect(ensureObraAccessMock).toHaveBeenCalledWith('o1')
     expect(notFoundMock).not.toHaveBeenCalled()
   })

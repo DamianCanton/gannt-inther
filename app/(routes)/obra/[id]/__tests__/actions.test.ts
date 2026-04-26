@@ -194,6 +194,34 @@ describe('saveTaskChange action', () => {
     )
   })
 
+  it('forwards hierarchy fields (parentId/offsetDias) to create mutation payload', async () => {
+    requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
+    const before = createScheduleFixture('p-auth', 'o1')
+    const after = createScheduleFixture('p-auth', 'o1')
+
+    getObraScheduleMock.mockResolvedValueOnce(before).mockResolvedValueOnce(after)
+    mutateTaskGraphAtomicMock.mockResolvedValue('t2')
+
+    await mutateTask({
+      intent: 'create',
+      obraId: 'o1',
+      nombre: 'Hija',
+      duracionDias: 2,
+      dependeDeId: null,
+      parentId: 't1',
+      offsetDias: 3,
+    })
+
+    expect(mutateTaskGraphAtomicMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          parent_id: 't1',
+          offset_dias: 3,
+        }),
+      })
+    )
+  })
+
   it('handles delete intent through unified mutateTask action', async () => {
     requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
     const before: ObraSchedule = {

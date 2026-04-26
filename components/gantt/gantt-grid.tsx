@@ -1,9 +1,11 @@
 'use client'
 
-import { type ReactNode } from 'react'
+import { useEffect, useRef, type PointerEvent, type ReactNode } from 'react'
 
 import { isWeekend } from '@/lib/date-engine'
 import type { IsoDate, ScheduleTask, Uuid } from '@/types/gantt'
+
+import type { InteractiveHierarchyRow } from './hierarchy-utils'
 
 import {
   buildTimelineColumns,
@@ -15,16 +17,118 @@ export interface GanttGridProps {
   tasks: ScheduleTask[]
   obraStartDate: IsoDate
   selectedTaskId: Uuid | null
+  initialCenteredTaskId?: Uuid | null
   onSelectTask: (taskId: Uuid) => void
+  hierarchyRowsByTaskId?: ReadonlyMap<Uuid, InteractiveHierarchyRow>
+  onToggleParent?: (taskId: Uuid) => void
+  viewportClassName?: string
 }
 
 const COLUMN_WIDTH_PX = 72
 const TASK_LABEL_WIDTH_PX = 200
 
-export function GanttGrid({ tasks, obraStartDate, selectedTaskId, onSelectTask }: GanttGridProps) {
+export function GanttGrid({
+  tasks,
+  obraStartDate,
+  selectedTaskId,
+  initialCenteredTaskId = null,
+  onSelectTask,
+  hierarchyRowsByTaskId,
+  onToggleParent,
+  viewportClassName,
+}: GanttGridProps) {
+  const timelineScrollRef = useRef<HTMLDivElement>(null)
+  const dragStateRef = useRef({
+    isDragging: false,
+    startX: 0,
+    startScrollLeft: 0,
+  })
+  const suppressClickRef = useRef(false)
+
   const scale = deriveTimelineScale(tasks, obraStartDate)
   const columns = buildTimelineColumns({ tasks, obraStartDate, scale })
   const todayIso = new Date().toISOString().slice(0, 10)
+
+  useEffect(() => {
+    if (!initialCenteredTaskId || !timelineScrollRef.current) {
+      return
+    }
+
+    const taskToCenter = tasks.find((task) => task.id === initialCenteredTaskId)
+    if (!taskToCenter) {
+      return
+    }
+
+    const range = getTaskTimelineRange({ task: taskToCenter, obraStartDate, scale })
+    const container = timelineScrollRef.current
+    const contentWidth = TASK_LABEL_WIDTH_PX + columns.length * COLUMN_WIDTH_PX
+    const taskCenterPx =
+      TASK_LABEL_WIDTH_PX +
+      range.startIndex * COLUMN_WIDTH_PX +
+      (range.span * COLUMN_WIDTH_PX) / 2
+
+    const nextScrollLeft = Math.max(
+      0,
+      Math.min(contentWidth - container.clientWidth, taskCenterPx - container.clientWidth / 2)
+    )
+
+    container.scrollLeft = nextScrollLeft
+  }, [columns.length, initialCenteredTaskId, obraStartDate, scale, tasks])
+
+  function handleTimelinePointerDown(event: PointerEvent<HTMLDivElement>) {
+    if (event.pointerType !== 'mouse' || event.button !== 0) {
+      return
+    }
+
+    const target = event.target as HTMLElement | null
+    if (target?.closest('button, input, select, textarea, a')) {
+      return
+    }
+
+    dragStateRef.current = {
+      isDragging: true,
+      startX: event.clientX,
+      startScrollLeft: event.currentTarget.scrollLeft,
+    }
+
+    event.currentTarget.setPointerCapture(event.pointerId)
+  }
+
+  function handleTimelinePointerMove(event: PointerEvent<HTMLDivElement>) {
+    if (!dragStateRef.current.isDragging) {
+      return
+    }
+
+    const deltaX = event.clientX - dragStateRef.current.startX
+    const nextScrollLeft = dragStateRef.current.startScrollLeft - deltaX
+    event.currentTarget.scrollLeft = nextScrollLeft
+
+    if (Math.abs(deltaX) > 4) {
+      suppressClickRef.current = true
+    }
+  }
+
+  function handleTimelinePointerEnd(event: PointerEvent<HTMLDivElement>) {
+    if (!dragStateRef.current.isDragging) {
+      return
+    }
+
+    dragStateRef.current.isDragging = false
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+  }
+
+  function handleTimelineClickCapture(event: React.MouseEvent<HTMLDivElement>) {
+    if (!suppressClickRef.current) {
+      return
+    }
+
+    suppressClickRef.current = false
+    event.preventDefault()
+    event.stopPropagation()
+  }
 
   // ── Empty state ─────────────────────────────────────────────────
 
@@ -82,23 +186,53 @@ export function GanttGrid({ tasks, obraStartDate, selectedTaskId, onSelectTask }
   tasks.forEach((task) => {
     const isSelected = task.id === selectedTaskId
     const range = getTaskTimelineRange({ task, obraStartDate, scale })
+    const hierarchyRow = hierarchyRowsByTaskId?.get(task.id)
+    const depth = hierarchyRow?.depth ?? ((task.parentId ?? null) === null ? 0 : 1)
+    const hasChildren = hierarchyRow?.hasChildren ?? false
+    const isCollapsed = hierarchyRow?.isCollapsed ?? false
+    const canToggle = hasChildren && onToggleParent
+    const labelPadding = 12 + depth * 20
+    const rowStatusLabel = depth === 0 ? 'Tarea principal' : 'Subtarea'
 
     // Task label cell (sticky left)
     cells.push(
-      <button
+      <div
         key={`label-${task.id}`}
-        type="button"
-        className={`sticky left-0 z-10 flex flex-col items-start justify-center border-b border-r border-gray-200 px-3 py-2 text-left ${
+        className={`sticky left-0 z-10 flex cursor-pointer flex-col items-start justify-center border-b border-r border-gray-200 px-3 py-2 text-left ${
           isSelected ? 'bg-blue-50' : 'bg-white'
-        } cursor-pointer hover:bg-blue-50/50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-inset`}
+        } hover:bg-blue-50/50`}
+        style={{ paddingLeft: `${labelPadding}px` }}
         onClick={() => onSelectTask(task.id)}
+        role="button"
+        tabIndex={0}
         aria-label={`${task.nombre} · ${task.fechaInicio} → ${task.fechaFin}`}
-      >
-        <span className="text-sm font-medium text-gray-900">{task.nombre}</span>
-        <span className="text-xs text-gray-500">
-          {task.fechaInicio} → {task.fechaFin} · {task.duracionDias}d
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            onSelectTask(task.id)
+          }
+        }}
+        >
+        <span className="flex items-center gap-1 text-sm font-medium text-gray-900">
+          {canToggle ? (
+            <button
+              type="button"
+              className="inline-flex h-5 w-5 items-center justify-center rounded text-gray-600 hover:bg-gray-200"
+              aria-label={`${isCollapsed ? 'Expandir' : 'Contraer'} ${task.nombre}`}
+              onClick={(event) => {
+                event.stopPropagation()
+                onToggleParent?.(task.id)
+              }}
+            >
+              {isCollapsed ? '▸' : '▾'}
+            </button>
+          ) : null}
+          {task.nombre}
         </span>
-      </button>
+        <span className="text-xs text-gray-500">
+          {rowStatusLabel} · {task.fechaInicio} → {task.fechaFin} · {task.duracionDias}d
+        </span>
+      </div>
     )
 
     // Date cells
@@ -135,12 +269,21 @@ export function GanttGrid({ tasks, obraStartDate, selectedTaskId, onSelectTask }
     <div className="space-y-2 min-w-0 w-full">
       {/* ── Outer: vertical scroll only ── */}
       <div
-        className="w-full max-h-[calc(100vh-280px)] overflow-y-auto overflow-x-hidden rounded border border-gray-200 bg-white relative"
+        className={`relative w-full overflow-y-auto overflow-x-hidden rounded border border-gray-200 bg-white ${viewportClassName ?? 'max-h-[calc(100vh-280px)]'}`}
         role="grid"
         aria-label="Cronograma de tareas"
       >
         {/* ── Inner: horizontal scroll only (native scrollbar) ── */}
-        <div className="w-full min-w-0 overflow-x-auto overflow-y-hidden">
+        <div
+          ref={timelineScrollRef}
+          className="timeline-drag-surface timeline-scrollbar w-full min-w-0 overflow-x-auto overflow-y-hidden"
+          onPointerDown={handleTimelinePointerDown}
+          onPointerMove={handleTimelinePointerMove}
+          onPointerUp={handleTimelinePointerEnd}
+          onPointerCancel={handleTimelinePointerEnd}
+          onClickCapture={handleTimelineClickCapture}
+          aria-label="Superficie desplazable del cronograma"
+        >
           {/* The unified CSS Grid — all cells are direct children */}
           <div
             className="grid relative"

@@ -12,19 +12,53 @@
   animation: today-pulse 2s ease-in-out 3;
 }
 
+.timeline-drag-surface {
+  cursor: grab;
+  user-select: none;
+}
+
+.timeline-drag-surface:active {
+  cursor: grabbing;
+}
+
+.timeline-scrollbar {
+  scrollbar-width: auto;
+  scrollbar-color: #64748b #e2e8f0;
+}
+
+.timeline-scrollbar::-webkit-scrollbar {
+  height: 14px;
+  width: 14px;
+}
+
+.timeline-scrollbar::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 9999px;
+}
+
+.timeline-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #94a3b8 0%, #64748b 100%);
+  border-radius: 9999px;
+  border: 2px solid #e2e8f0;
+}
+
+.timeline-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, #64748b 0%, #475569 100%);
+}
+
 /* ============================================================
    Print — INTHER Corporate Letterhead (A4 Landscape)
    ============================================================ */
 
 /* ── Screen preview styles ─────────────────────────────────── */
 .print-container {
-  max-width: 1200px;
+  max-width: none;
   margin: 0 auto;
-  padding: 24px 32px;
+  padding: 20px 24px;
   background: #fff;
   color: #1e293b;
   font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
 }
 
@@ -120,9 +154,10 @@
 .print-gantt-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.3;
   table-layout: fixed;
+  min-width: max-content;
 }
 
 .print-gantt-table thead {
@@ -137,8 +172,8 @@
   color: #fff;
   background: #1e3a5f; /* Deep INTHER blue */
   border: 1px solid #1e3a5f;
-  min-width: 140px;
-  width: 140px;
+  min-width: 240px;
+  width: 240px;
   position: sticky;
   left: 0;
   z-index: 2;
@@ -152,8 +187,8 @@
   color: #fff;
   background: #1e3a5f;
   border: 1px solid #1e3a5f;
-  min-width: 40px;
-  width: 40px;
+  min-width: 56px;
+  width: 56px;
 }
 
 .print-gantt-table__month-header {
@@ -176,14 +211,14 @@
   color: #f8fafc;
   background: #2563eb;
   border: 1px solid #1d4ed8;
-  min-width: 36px;
+  min-width: 42px;
   white-space: nowrap;
 }
 
 .print-gantt-table__task-name {
-  padding: 5px 8px;
+  padding: 6px 10px;
   font-weight: 500;
-  font-size: 10px;
+  font-size: 11px;
   color: #1e293b;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -197,9 +232,9 @@
 
 .print-gantt-table__task-dur {
   text-align: center;
-  padding: 5px 4px;
+  padding: 6px 4px;
   font-weight: 600;
-  font-size: 10px;
+  font-size: 11px;
   color: #475569;
   background: #f1f5f9;
   border: 1px solid #e2e8f0;
@@ -208,8 +243,8 @@
 .print-gantt-table__cell {
   padding: 0;
   border: 1px solid #e2e8f0;
-  height: 26px;
-  min-height: 26px;
+  height: 30px;
+  min-height: 30px;
   background: #fff;
 }
 
@@ -257,8 +292,8 @@
    ============================================================ */
 @media print {
   @page {
-    size: A4 landscape;
-    margin: 10mm 8mm 12mm 8mm;
+    size: auto;
+    margin: 8mm;
   }
 
   body {
@@ -273,7 +308,7 @@
     margin: 0;
     max-width: none;
     width: 100%;
-    font-size: 9px;
+    font-size: 10px;
   }
 
   /* ── Letterhead print sizing ──────────────────────────── */
@@ -306,21 +341,22 @@
 
   /* ── Table print sizing ──────────────────────────────── */
   .print-gantt-table {
-    font-size: 7px;
+    font-size: 8px;
+    min-width: max-content;
   }
 
   .print-gantt-table__task-header {
-    font-size: 7px;
+    font-size: 8px;
     padding: 3px 4px;
-    min-width: 100px;
-    width: 100px;
+    min-width: 180px;
+    width: 180px;
   }
 
   .print-gantt-table__dur-header {
-    font-size: 7px;
+    font-size: 8px;
     padding: 3px 2px;
-    min-width: 22px;
-    width: 22px;
+    min-width: 32px;
+    width: 32px;
   }
 
   .print-gantt-table__month-header {
@@ -329,24 +365,24 @@
   }
 
   .print-gantt-table__col-header {
-    font-size: 7px;
+    font-size: 8px;
     padding: 3px 2px;
-    min-width: 32px;
+    min-width: 44px;
   }
 
   .print-gantt-table__task-name {
-    font-size: 7px;
-    padding: 2px 4px;
+    font-size: 8px;
+    padding: 3px 5px;
   }
 
   .print-gantt-table__task-dur {
-    font-size: 7px;
-    padding: 2px 2px;
+    font-size: 8px;
+    padding: 3px 2px;
   }
 
   .print-gantt-table__cell {
-    height: 16px;
-    min-height: 16px;
+    height: 20px;
+    min-height: 20px;
   }
 
   /* ── Page-break rules ─────────────────────────────────── */
