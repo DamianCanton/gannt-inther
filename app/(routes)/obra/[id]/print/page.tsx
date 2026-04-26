@@ -1,11 +1,17 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { GanttRepo, RepoAccessError } from '@/lib/repositories/gantt-repo'
 import { GanttPrintTable, PrintClientControls } from '@/components/gantt'
+import { deserializePrintConfig } from '@/components/gantt/print-projection'
 import { AuthContextError } from '@/lib/auth/auth-context'
 import { ensureObraAccess } from '@/lib/auth/guards'
 import { notFound, redirect } from 'next/navigation'
 
-export default async function PrintPage({ params }: { params: { id: string } }) {
+interface PrintPageProps {
+  params: { id: string }
+  searchParams?: { config?: string }
+}
+
+export default async function PrintPage({ params, searchParams }: PrintPageProps) {
   try {
     const auth = await ensureObraAccess(params.id)
     const supabase = createServerClient()
@@ -17,15 +23,17 @@ export default async function PrintPage({ params }: { params: { id: string } }) 
       notFound()
     }
     
+    const printConfig = deserializePrintConfig(searchParams?.config)
+
     return (
       <main className="p-4">
         <PrintClientControls />
-        <GanttPrintTable obra={obra} />
+        <GanttPrintTable obra={obra} printConfig={printConfig} />
         <div
           data-testid="print-format-contract"
           className="sr-only"
-          data-print-format="A4 landscape"
-          data-pagination-safe="true"
+          data-print-format="auto-fit"
+          data-pagination-safe="false"
         />
       </main>
     )

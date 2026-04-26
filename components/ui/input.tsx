@@ -10,9 +10,10 @@ function cn(...classes: (string | undefined | null | false)[]): string {
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string
   error?: string
+  helperText?: string
 }
 
-export function Input({ label, error, className, ...props }: InputProps) {
+export function Input({ label, error, helperText, className, ...props }: InputProps) {
   const generatedId = useId()
   const inputId = props.id ?? generatedId
 
@@ -35,6 +36,9 @@ export function Input({ label, error, className, ...props }: InputProps) {
       {error && (
         <span className="text-red-500 text-sm">{error}</span>
       )}
+      {!error && helperText ? (
+        <span className="text-xs text-gray-500">{helperText}</span>
+      ) : null}
     </div>
   )
 }

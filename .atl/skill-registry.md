@@ -55,7 +55,10 @@
 - **Persistence Mode**: engram
 - **Project**: gannt-inther
 - **Initialized**: 2026-04-23
-- **Strict TDD Mode**: enabled
+- **Last Updated**: 2026-04-24
+- **Strict TDD Mode**: enabled ✅
+- **Test Runner**: Vitest
+- **Stack**: Next.js 14 + TypeScript 5.4 (Strict) + Tailwind + Supabase
 
 ## Notes
 

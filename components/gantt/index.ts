@@ -5,6 +5,12 @@ export { GanttPrintTable } from './gantt-print-table'
 export { PrintClientControls } from './print-client-controls'
 export { GanttGrid } from './gantt-grid'
 export { PrintTimelineTable } from './print-timeline-table'
+export {
+  DEFAULT_PRINT_CONFIG,
+  deserializePrintConfig,
+  projectPrintableTasks,
+  serializePrintConfig,
+} from './print-projection'
 export { TaskEditor } from './task-editor'
 export { TaskList } from './task-list'
 export { TimelineGrid } from './timeline-grid'

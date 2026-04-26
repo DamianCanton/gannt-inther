@@ -1,7 +1,8 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { GanttInteractive } from '@/components/gantt/gantt-interactive'
+import { deserializePrintConfig } from '@/components/gantt/print-projection'
 import type { ScheduleTask } from '@/types/gantt'
 
 const initialSchedule: ScheduleTask[] = [
@@ -32,6 +33,35 @@ const initialSchedule: ScheduleTask[] = [
 const taskA = initialSchedule[0] as ScheduleTask
 const taskB = initialSchedule[1] as ScheduleTask
 
+const hierarchySchedule: ScheduleTask[] = [
+  {
+    id: 'P1',
+    projectId: 'p1',
+    obraId: 'o1',
+    nombre: 'Padre',
+    duracionDias: 5,
+    dependeDeId: null,
+    parentId: null,
+    offsetDias: 0,
+    orden: 1,
+    fechaInicio: '2026-04-06',
+    fechaFin: '2026-04-10',
+  },
+  {
+    id: 'C1',
+    projectId: 'p1',
+    obraId: 'o1',
+    nombre: 'Hija',
+    duracionDias: 2,
+    dependeDeId: null,
+    parentId: 'P1',
+    offsetDias: 1,
+    orden: 2,
+    fechaInicio: '2026-04-07',
+    fechaFin: '2026-04-08',
+  },
+]
+
 describe('interactive gantt integration', () => {
   afterEach(() => {
     cleanup()
@@ -58,6 +88,30 @@ describe('interactive gantt integration', () => {
 
     fireEvent.click(screen.getAllByRole('button', { name: /Cimentación/ })[0]!)
     expect(screen.getByText('Cimentación · 2026-04-06 → 2026-04-07')).toBeTruthy()
+  })
+
+  it('collapses and expands child visibility in interactive grid', () => {
+    const noop = vi.fn().mockResolvedValue({})
+
+    render(
+      <GanttInteractive
+        obraNombre="Obra Demo"
+        projectId="p1"
+        obraId="o1"
+        obraStartDate="2026-04-06"
+        printHref="/obra/o1/print"
+        initialSchedule={hierarchySchedule}
+        onMutateTask={noop}
+      />
+    )
+
+    expect(screen.getByRole('button', { name: /Hija · 2026-04-07 → 2026-04-08/ })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Contraer Padre' }))
+    expect(screen.queryByRole('button', { name: /Hija · 2026-04-07 → 2026-04-08/ })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expandir Padre' }))
+    expect(screen.getByRole('button', { name: /Hija · 2026-04-07 → 2026-04-08/ })).toBeTruthy()
   })
 
   it('creates a task and reconciles with the server schedule', async () => {
@@ -263,7 +317,9 @@ describe('interactive gantt integration', () => {
     expect(saveMock).toHaveBeenCalledTimes(0)
   })
 
-  it('shows visible export CTA with print href', () => {
+  it('opens print modal and hands off serialized PrintConfig to print route', () => {
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
+
     render(
       <GanttInteractive
         obraNombre="Obra Demo"
@@ -276,8 +332,100 @@ describe('interactive gantt integration', () => {
       />
     )
 
-    const exportLink = screen.getByRole('link', { name: 'Exportar PDF/Imprimir' })
-    expect(exportLink.getAttribute('href')).toBe('/obra/o1/print')
+    fireEvent.click(screen.getByRole('button', { name: 'Exportar PDF/Imprimir' }))
+    fireEvent.click(screen.getByLabelText('Expandir todo antes de imprimir'))
+    fireEvent.click(screen.getByLabelText('Incluir tareas de 1 día'))
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir vista de impresión' }))
+
+    expect(openSpy).toHaveBeenCalledTimes(1)
+    const openedUrl = openSpy.mock.calls[0]?.[0]
+    expect(typeof openedUrl).toBe('string')
+
+    const parsedUrl = new URL(openedUrl as string, 'https://example.test')
+    expect(parsedUrl.pathname).toBe('/obra/o1/print')
+
+    const encodedConfig = parsedUrl.searchParams.get('config')
+    expect(encodedConfig).toBeTruthy()
+
+    const config = deserializePrintConfig(encodedConfig)
+    expect(config.expandAllBeforePrint).toBe(true)
+    expect(config.includeOneDayTasks).toBe(false)
+    expect(config.selectionMode).toBe('visible')
+  })
+
+  it('supports manual task selection in print handoff config', () => {
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
+
+    render(
+      <GanttInteractive
+        obraNombre="Obra Demo"
+        projectId="p1"
+        obraId="o1"
+        obraStartDate="2026-04-06"
+        printHref="/obra/o1/print"
+        initialSchedule={initialSchedule}
+        onMutateTask={vi.fn()}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Exportar PDF/Imprimir' }))
+    fireEvent.click(screen.getByLabelText('Selección manual'))
+    fireEvent.click(screen.getByLabelText('Estructura (3d)'))
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir vista de impresión' }))
+
+    const openedUrl = openSpy.mock.calls[0]?.[0]
+    const parsedUrl = new URL(openedUrl as string, 'https://example.test')
+    const encodedConfig = parsedUrl.searchParams.get('config')
+    const config = deserializePrintConfig(encodedConfig)
+
+    expect(config.selectionMode).toBe('manual')
+    expect(config.manualTaskIds).toEqual(['B'])
+  })
+
+  it('opens an expanded chart view without the editor panel', () => {
+    const requestFullscreenMock = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(HTMLDivElement.prototype, 'requestFullscreen', {
+      configurable: true,
+      value: requestFullscreenMock,
+    })
+    Object.defineProperty(HTMLDivElement.prototype, 'clientWidth', {
+      configurable: true,
+      value: 400,
+    })
+
+    render(
+      <GanttInteractive
+        obraNombre="Obra Demo"
+        projectId="p1"
+        obraId="o1"
+        obraStartDate="2026-04-06"
+        printHref="/obra/o1/print"
+        initialSchedule={initialSchedule}
+        onMutateTask={vi.fn()}
+      />
+    )
+
+    fireEvent.click(screen.getAllByRole('button', { name: /Estructura/ })[0]!)
+    fireEvent.click(screen.getByRole('button', { name: 'Ver gráfico ampliado' }))
+
+    const expandedDialog = screen.getByRole('dialog', { name: 'Vista ampliada · Obra Demo' })
+    const draggableSurface = within(expandedDialog).getByLabelText('Superficie desplazable del cronograma')
+
+    expect(expandedDialog).toBeTruthy()
+    expect(within(expandedDialog).getByText(/Modo pro del cronograma/)).toBeTruthy()
+    expect(
+      within(expandedDialog).getByText(/mantené click izquierdo sobre el gráfico y arrastrá hacia los costados/i)
+    ).toBeTruthy()
+    expect(draggableSurface).toBeTruthy()
+    expect(draggableSurface.scrollLeft).toBeGreaterThan(0)
+    expect(screen.queryByRole('button', { name: 'Guardar cambios' })).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pantalla completa' }))
+    expect(requestFullscreenMock).toHaveBeenCalledTimes(1)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar vista ampliada' }))
+
+    expect(screen.queryByRole('dialog', { name: 'Vista ampliada · Obra Demo' })).toBeNull()
   })
 
   it('shows visible pending feedback during mutation', async () => {

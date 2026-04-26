@@ -11,11 +11,13 @@ export interface SmartInsertPayload {
 }
 
 export type GanttEditIntent =
-  | {
+    | {
       intent: 'create'
       nombre: string
       duracionDias: number
       dependeDeId: Uuid | null
+      parentId: Uuid | null
+      offsetDias: number
       smartInsert?: SmartInsertPayload
     }
   | {
@@ -24,6 +26,8 @@ export type GanttEditIntent =
       nombre: string
       duracionDias: number
       dependeDeId: Uuid | null
+      parentId: Uuid | null
+      offsetDias: number
       smartInsert?: SmartInsertPayload
     }
   | {
