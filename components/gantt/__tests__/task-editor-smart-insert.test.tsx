@@ -16,8 +16,6 @@ const makeScheduleTask = (overrides: Partial<ScheduleTask>): ScheduleTask => ({
   nombre: overrides.nombre ?? 'Task',
   duracionDias: overrides.duracionDias ?? 1,
   dependeDeId: overrides.dependeDeId ?? null,
-  parentId: overrides.parentId ?? null,
-  offsetDias: overrides.offsetDias ?? 0,
   orden: overrides.orden ?? 1,
   fechaInicio: overrides.fechaInicio ?? '2026-04-06',
   fechaFin: overrides.fechaFin ?? '2026-04-06',
@@ -72,7 +70,6 @@ describe('TaskEditor — smart-insert confirmation-gated persistence', () => {
 
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Nueva' } })
     fireEvent.change(screen.getByLabelText('Duración (días hábiles)'), { target: { value: '2' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Mostrar opciones avanzadas' }))
     fireEvent.change(screen.getByRole('combobox', { name: /Dependencia/ }), {
       target: { value: 'A' },
     })
@@ -109,7 +106,6 @@ describe('TaskEditor — smart-insert confirmation-gated persistence', () => {
 
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Nueva' } })
     fireEvent.change(screen.getByLabelText('Duración (días hábiles)'), { target: { value: '2' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Mostrar opciones avanzadas' }))
     fireEvent.change(screen.getByRole('combobox', { name: /Dependencia/ }), {
       target: { value: 'A' },
     })
@@ -142,7 +138,6 @@ describe('TaskEditor — smart-insert confirmation-gated persistence', () => {
 
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Nueva' } })
     fireEvent.change(screen.getByLabelText('Duración (días hábiles)'), { target: { value: '2' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Mostrar opciones avanzadas' }))
     fireEvent.change(screen.getByRole('combobox', { name: /Dependencia/ }), {
       target: { value: 'A' },
     })
@@ -163,7 +158,7 @@ describe('TaskEditor — smart-insert confirmation-gated persistence', () => {
     expect(payload.smartInsert).toBeUndefined()
   })
 
-  it('submits parentId/offsetDias when creating a child task', async () => {
+  it('submits flat payload without parent/offset fields', async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined)
     const tasks = noConflictScenario()
 
@@ -175,11 +170,9 @@ describe('TaskEditor — smart-insert confirmation-gated persistence', () => {
 
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Nueva hija' } })
     fireEvent.change(screen.getByLabelText('Duración (días hábiles)'), { target: { value: '2' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Mostrar opciones avanzadas' }))
-    fireEvent.change(screen.getByRole('combobox', { name: /Subtareas \/ Grupo/ }), {
+    fireEvent.change(screen.getByRole('combobox', { name: /Dependencia/ }), {
       target: { value: 'A' },
     })
-    fireEvent.change(screen.getByLabelText('Offset (días hábiles)'), { target: { value: '3' } })
 
     fireEvent.submit(form)
 
@@ -188,18 +181,16 @@ describe('TaskEditor — smart-insert confirmation-gated persistence', () => {
     })
 
     const payload = onSubmit.mock.calls[0]?.[0]
-    expect(payload).toMatchObject({
-      intent: 'create',
-      parentId: 'A',
-      offsetDias: 3,
-    })
+    expect(payload).toMatchObject({ intent: 'create', dependeDeId: 'A' })
+    expect(payload.parentId).toBeUndefined()
+    expect(payload.offsetDias).toBeUndefined()
   })
 
-  it('clears and disables dependency when parent is selected in create mode', async () => {
+  it('keeps dependency editable in create mode', async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined)
     const tasks = [
-      makeScheduleTask({ id: 'A', nombre: 'Parent', parentId: null, duracionDias: 3, orden: 1 }),
-      makeScheduleTask({ id: 'B', nombre: 'Dependency', parentId: null, orden: 2 }),
+      makeScheduleTask({ id: 'A', nombre: 'Parent', duracionDias: 3, orden: 1 }),
+      makeScheduleTask({ id: 'B', nombre: 'Dependency', orden: 2 }),
     ]
 
     const { container } = render(
@@ -210,18 +201,10 @@ describe('TaskEditor — smart-insert confirmation-gated persistence', () => {
 
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Nueva hija' } })
     fireEvent.change(screen.getByLabelText('Duración (días hábiles)'), { target: { value: '2' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Mostrar opciones avanzadas' }))
-
     const dependencySelect = screen.getByRole('combobox', { name: /Dependencia/ }) as HTMLSelectElement
     fireEvent.change(dependencySelect, { target: { value: 'B' } })
     expect(dependencySelect.value).toBe('B')
-
-    fireEvent.change(screen.getByRole('combobox', { name: /Subtareas \/ Grupo/ }), {
-      target: { value: 'A' },
-    })
-
-    expect(dependencySelect.disabled).toBe(true)
-    expect(dependencySelect.value).toBe('')
+    expect(dependencySelect.disabled).toBe(false)
 
     fireEvent.submit(form)
 
@@ -232,8 +215,7 @@ describe('TaskEditor — smart-insert confirmation-gated persistence', () => {
     const payload = onSubmit.mock.calls[0]?.[0]
     expect(payload).toMatchObject({
       intent: 'create',
-      parentId: 'A',
-      dependeDeId: null,
+      dependeDeId: 'B',
     })
   })
 })
@@ -257,7 +239,6 @@ describe('TaskEditor — edit flow preserves user intent', () => {
 
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Nueva' } })
     fireEvent.change(screen.getByLabelText('Duración (días hábiles)'), { target: { value: '2' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Mostrar opciones avanzadas' }))
     fireEvent.change(screen.getByRole('combobox', { name: /Dependencia/ }), {
       target: { value: 'A' },
     })
@@ -295,7 +276,6 @@ describe('TaskEditor — edit flow preserves user intent', () => {
 
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Nueva' } })
     fireEvent.change(screen.getByLabelText('Duración (días hábiles)'), { target: { value: '2' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Mostrar opciones avanzadas' }))
     fireEvent.change(screen.getByRole('combobox', { name: /Dependencia/ }), {
       target: { value: 'A' },
     })
@@ -363,12 +343,12 @@ describe('TaskEditor — edit flow preserves user intent', () => {
     expect(payload.smartInsert).toBeUndefined()
   })
 
-  it('edit mode clears legacy dependency when task is child', async () => {
+  it('edit mode preserves dependency for existing rows', async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined)
     const tasks = [
-      makeScheduleTask({ id: 'P1', nombre: 'Parent', parentId: null, duracionDias: 4, orden: 1 }),
-      makeScheduleTask({ id: 'D1', nombre: 'Dep', parentId: null, orden: 2 }),
-      makeScheduleTask({ id: 'C1', nombre: 'Child', parentId: 'P1', dependeDeId: 'D1', orden: 3 }),
+      makeScheduleTask({ id: 'P1', nombre: 'Parent', duracionDias: 4, orden: 1 }),
+      makeScheduleTask({ id: 'D1', nombre: 'Dep', orden: 2 }),
+      makeScheduleTask({ id: 'C1', nombre: 'Child', dependeDeId: 'D1', orden: 3 }),
     ]
 
     const selectedTask = tasks[2]!
@@ -387,8 +367,7 @@ describe('TaskEditor — edit flow preserves user intent', () => {
 
     const dependencySelect = screen.getByRole('combobox', { name: /Dependencia/ }) as HTMLSelectElement
     await waitFor(() => {
-      expect(dependencySelect.disabled).toBe(true)
-      expect(dependencySelect.value).toBe('')
+      expect(dependencySelect.disabled).toBe(false)
     })
 
     fireEvent.submit(container.querySelector('form')!)
@@ -401,8 +380,7 @@ describe('TaskEditor — edit flow preserves user intent', () => {
     expect(payload).toMatchObject({
       intent: 'update',
       taskId: 'C1',
-      parentId: 'P1',
-      dependeDeId: null,
+      dependeDeId: 'D1',
     })
   })
 })

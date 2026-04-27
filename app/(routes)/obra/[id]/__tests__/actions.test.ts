@@ -194,7 +194,7 @@ describe('saveTaskChange action', () => {
     )
   })
 
-  it('forwards hierarchy fields (parentId/offsetDias) to create mutation payload', async () => {
+  it('does not forward hierarchy fields to create mutation payload', async () => {
     requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
     const before = createScheduleFixture('p-auth', 'o1')
     const after = createScheduleFixture('p-auth', 'o1')
@@ -208,15 +208,12 @@ describe('saveTaskChange action', () => {
       nombre: 'Hija',
       duracionDias: 2,
       dependeDeId: null,
-      parentId: 't1',
-      offsetDias: 3,
     })
 
     expect(mutateTaskGraphAtomicMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        payload: expect.objectContaining({
-          parent_id: 't1',
-          offset_dias: 3,
+        payload: expect.not.objectContaining({
+          parent_id: expect.anything(),
         }),
       })
     )

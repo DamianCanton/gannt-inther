@@ -14,8 +14,6 @@ const makeTask = (overrides: Partial<TaskInput>): TaskInput => ({
   nombre: overrides.nombre ?? 'Task',
   duracionDias: overrides.duracionDias ?? 1,
   dependeDeId: overrides.dependeDeId ?? null,
-  parentId: overrides.parentId ?? null,
-  offsetDias: overrides.offsetDias ?? 0,
   orden: overrides.orden ?? 1,
 })
 
@@ -107,7 +105,7 @@ describe('gantt-crud-service', () => {
     }
   })
 
-  it('creates canonical dependency mapping from dependeDeId', () => {
+  it('creates canonical dependency mapping from dependeDeId for all rows', () => {
     const service = new GanttCrudService()
     const schedule = makeSchedule([
       makeTask({ id: 'A', dependeDeId: null, orden: 1 }),
@@ -148,133 +146,43 @@ describe('gantt-crud-service', () => {
     expect(mapMutationErrorToDomainCode({ message: 'unexpected timeout' })).toBe('ATOMIC_WRITE_FAILED')
   })
 
-  it('rejects child-of-child creation (max depth 1)', () => {
+  it('keeps create dependency contract focused on dependeDeId', () => {
     const service = new GanttCrudService()
     const schedule = makeSchedule([
-      makeTask({ id: 'P1', parentId: null, orden: 1 }),
-      makeTask({ id: 'C1', parentId: 'P1', offsetDias: 1, orden: 2 }),
+      makeTask({ id: 'D1', duracionDias: 2, orden: 1 }),
     ])
 
-    expect(() =>
-      service.prepareTaskMutation({
-        schedule,
-        command: {
-          intent: 'create',
-          obraId: 'o1',
-          nombre: 'Grandchild',
-          duracionDias: 2,
-          dependeDeId: null,
-          parentId: 'C1',
-          offsetDias: 0,
-        },
-      })
-    ).toThrowError(TaskMutationError)
+    const prepared = service.prepareTaskMutation({
+      schedule,
+      command: {
+        intent: 'create',
+        obraId: 'o1',
+        nombre: 'Task with dep',
+        duracionDias: 2,
+        dependeDeId: 'D1',
+      },
+    })
+
+    expect(prepared.payload.depende_de_id).toBe('D1')
   })
 
-  it('rejects negative child offset', () => {
-    const service = new GanttCrudService()
-    const schedule = makeSchedule([makeTask({ id: 'P1', parentId: null, orden: 1 })])
-
-    expect(() =>
-      service.prepareTaskMutation({
-        schedule,
-        command: {
-          intent: 'create',
-          obraId: 'o1',
-          nombre: 'Child',
-          duracionDias: 2,
-          dependeDeId: null,
-          parentId: 'P1',
-          offsetDias: -1,
-        },
-      })
-    ).toThrowError(TaskMutationError)
-  })
-
-  it('rejects manual parent duration edit when task already has children', () => {
+  it('keeps update dependency contract focused on dependeDeId', () => {
     const service = new GanttCrudService()
     const schedule = makeSchedule([
-      makeTask({ id: 'P1', parentId: null, duracionDias: 5, orden: 1 }),
-      makeTask({ id: 'C1', parentId: 'P1', duracionDias: 2, offsetDias: 1, orden: 2 }),
+      makeTask({ id: 'D1', duracionDias: 2, orden: 1 }),
+      makeTask({ id: 'T1', duracionDias: 2, orden: 2 }),
     ])
 
-    expect(() =>
-      service.prepareTaskMutation({
-        schedule,
-        command: {
-          intent: 'update',
-          obraId: 'o1',
-          taskId: 'P1',
-          dependeDeId: null,
-          duracionDias: 10,
-        },
-      })
-    ).toThrowError(TaskMutationError)
-  })
+    const prepared = service.prepareTaskMutation({
+      schedule,
+      command: {
+        intent: 'update',
+        obraId: 'o1',
+        taskId: 'T1',
+        dependeDeId: 'D1',
+      },
+    })
 
-  it('rejects adding child to a one-day parent', () => {
-    const service = new GanttCrudService()
-    const schedule = makeSchedule([makeTask({ id: 'P1', parentId: null, duracionDias: 1, orden: 1 })])
-
-    expect(() =>
-      service.prepareTaskMutation({
-        schedule,
-        command: {
-          intent: 'create',
-          obraId: 'o1',
-          nombre: 'Child',
-          duracionDias: 2,
-          dependeDeId: null,
-          parentId: 'P1',
-          offsetDias: 0,
-        },
-      })
-    ).toThrowError(TaskMutationError)
-  })
-
-  it('rejects create mutation when child task carries dependeDeId', () => {
-    const service = new GanttCrudService()
-    const schedule = makeSchedule([
-      makeTask({ id: 'P1', parentId: null, duracionDias: 3, orden: 1 }),
-      makeTask({ id: 'D1', parentId: null, duracionDias: 2, orden: 2 }),
-    ])
-
-    expect(() =>
-      service.prepareTaskMutation({
-        schedule,
-        command: {
-          intent: 'create',
-          obraId: 'o1',
-          nombre: 'Child with dep',
-          duracionDias: 2,
-          parentId: 'P1',
-          offsetDias: 1,
-          dependeDeId: 'D1',
-        },
-      })
-    ).toThrowError(TaskMutationError)
-  })
-
-  it('rejects update mutation when child task carries dependeDeId', () => {
-    const service = new GanttCrudService()
-    const schedule = makeSchedule([
-      makeTask({ id: 'P1', parentId: null, duracionDias: 3, orden: 1 }),
-      makeTask({ id: 'D1', parentId: null, duracionDias: 2, orden: 2 }),
-      makeTask({ id: 'T1', parentId: null, duracionDias: 2, orden: 3 }),
-    ])
-
-    expect(() =>
-      service.prepareTaskMutation({
-        schedule,
-        command: {
-          intent: 'update',
-          obraId: 'o1',
-          taskId: 'T1',
-          parentId: 'P1',
-          offsetDias: 0,
-          dependeDeId: 'D1',
-        },
-      })
-    ).toThrowError(TaskMutationError)
+    expect(prepared.payload.depende_de_id).toBe('D1')
   })
 })

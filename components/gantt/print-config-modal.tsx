@@ -4,7 +4,6 @@ import type { PrintSelectionMode, Uuid } from '@/types/gantt'
 
 export interface PrintConfigDraft {
   selectionMode: PrintSelectionMode
-  includeVisibleSubtasks: boolean
   includeOneDayTasks: boolean
   expandAllBeforePrint: boolean
   manualTaskIds: Uuid[]
@@ -13,7 +12,6 @@ export interface PrintConfigDraft {
 export interface PrintTaskOption {
   id: Uuid
   nombre: string
-  depth: 0 | 1
   duracionDias: number
 }
 
@@ -23,7 +21,6 @@ export interface PrintConfigModalProps {
   taskOptions: PrintTaskOption[]
   onClose: () => void
   onSelectionModeChange: (mode: PrintSelectionMode) => void
-  onIncludeVisibleSubtasksChange: (value: boolean) => void
   onIncludeOneDayTasksChange: (value: boolean) => void
   onExpandAllBeforePrintChange: (value: boolean) => void
   onToggleManualTask: (taskId: Uuid) => void
@@ -36,7 +33,6 @@ export function PrintConfigModal({
   taskOptions,
   onClose,
   onSelectionModeChange,
-  onIncludeVisibleSubtasksChange,
   onIncludeOneDayTasksChange,
   onExpandAllBeforePrintChange,
   onToggleManualTask,
@@ -80,15 +76,6 @@ export function PrintConfigModal({
           <label className="flex items-center gap-2 text-sm text-gray-700">
             <input
               type="checkbox"
-              checked={draft.includeVisibleSubtasks}
-              onChange={(event) => onIncludeVisibleSubtasksChange(event.target.checked)}
-            />
-            Incluir subtareas visibles
-          </label>
-
-          <label className="flex items-center gap-2 text-sm text-gray-700">
-            <input
-              type="checkbox"
               checked={draft.includeOneDayTasks}
               onChange={(event) => onIncludeOneDayTasksChange(event.target.checked)}
             />
@@ -117,9 +104,7 @@ export function PrintConfigModal({
                       checked={manualSelection.has(task.id)}
                       onChange={() => onToggleManualTask(task.id)}
                     />
-                    <span className={task.depth === 1 ? 'pl-4' : ''}>
-                      {task.nombre} ({task.duracionDias}d)
-                    </span>
+                    <span>{task.nombre} ({task.duracionDias}d)</span>
                   </label>
                 </li>
               ))}

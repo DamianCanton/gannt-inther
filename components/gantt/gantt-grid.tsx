@@ -2,8 +2,6 @@
 
 import { useEffect, useRef, type PointerEvent, type ReactNode } from 'react'
 
-import { ChevronDown, ChevronRight, FileText, FolderOpen } from 'lucide-react'
-
 import { isWeekend } from '@/lib/date-engine'
 import type { IsoDate, ScheduleTask, Uuid } from '@/types/gantt'
 
@@ -200,14 +198,7 @@ export function GanttGrid({
   tasks.forEach((task) => {
     const isSelected = task.id === selectedTaskId
     const range = getTaskTimelineRange({ task, obraStartDate, scale })
-    const hierarchyRow = hierarchyRowsByTaskId?.get(task.id)
-    const depth = hierarchyRow?.depth ?? ((task.parentId ?? null) === null ? 0 : 1)
-    const hasChildren = hierarchyRow?.hasChildren ?? false
-    const isCollapsed = hierarchyRow?.isCollapsed ?? false
-    const canToggle = hasChildren && onToggleParent
-    const labelPadding = 12 + depth * 20
-     const rowStatusLabel = depth === 0 ? 'Tarea principal' : 'Subtarea'
-     const TaskIcon = hasChildren || depth === 0 ? FolderOpen : FileText
+    const rowStatusLabel = 'Tarea'
 
     // Task label cell (sticky left)
     cells.push(
@@ -216,7 +207,6 @@ export function GanttGrid({
          className={`sticky left-0 z-10 flex cursor-pointer flex-col items-start justify-center border-b border-r border-slate-200 px-4 py-3 text-left ${
            isSelected ? 'bg-blue-50/80 shadow-[inset_3px_0_0_0_#2563eb]' : 'bg-white'
          } hover:bg-slate-50`}
-        style={{ paddingLeft: `${labelPadding}px` }}
         onClick={() => onSelectTask(task.id)}
         role="button"
         tabIndex={0}
@@ -228,25 +218,7 @@ export function GanttGrid({
           }
         }}
         >
-         <span className="flex items-start gap-2 text-sm font-medium text-slate-900">
-           {canToggle ? (
-             <button
-               type="button"
-               className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded text-slate-600 hover:bg-slate-200"
-               aria-label={`${isCollapsed ? 'Expandir' : 'Contraer'} ${task.nombre}`}
-               onClick={(event) => {
-                 event.stopPropagation()
-                 onToggleParent?.(task.id)
-               }}
-             >
-               {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
-             </button>
-           ) : null}
-           <TaskIcon size={16} className="mt-0.5 shrink-0 text-blue-500" />
-           <span>
-             {task.nombre}
-           </span>
-         </span>
+          <span className="text-sm font-medium text-slate-900">{task.nombre}</span>
          <span className="text-xs leading-5 text-slate-500">
            {rowStatusLabel} · {task.fechaInicio} → {task.fechaFin} · {task.duracionDias}d
          </span>

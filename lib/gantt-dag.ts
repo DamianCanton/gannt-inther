@@ -1,6 +1,5 @@
 import {
   addWorkingDays,
-  countWorkingDays,
   nextWorkingDay,
   toUtcDateOnly,
 } from '@/lib/date-engine'
@@ -84,50 +83,6 @@ function buildPredecessorMap(
   return predecessorsByTask
 }
 
-function isParentTask(task: Pick<TaskInput, 'parentId'>): boolean {
-  return (task.parentId ?? null) === null
-}
-
-function buildHierarchyIndex(tasks: TaskInput[]): {
-  parentTasks: TaskInput[]
-  childrenByParent: Map<Uuid, TaskInput[]>
-} {
-  const byId = new Map(tasks.map((task) => [task.id, task]))
-  const parentTasks: TaskInput[] = []
-  const childrenByParent = new Map<Uuid, TaskInput[]>()
-
-  for (const task of tasks) {
-    const parentId = task.parentId ?? null
-    if (parentId === null) {
-      parentTasks.push(task)
-      continue
-    }
-
-    const parentTask = byId.get(parentId)
-    if (!parentTask) {
-      throw new Error(`INVALID_PARENT_REFERENCE:${task.id}:${parentId}`)
-    }
-
-    if (!isParentTask(parentTask)) {
-      throw new Error(`INVALID_HIERARCHY_DEPTH:${task.id}:${parentId}`)
-    }
-
-    const currentChildren = childrenByParent.get(parentId) ?? []
-    currentChildren.push(task)
-    childrenByParent.set(parentId, currentChildren)
-  }
-
-  for (const [parentId, children] of childrenByParent.entries()) {
-    children.sort((left, right) => left.orden - right.orden)
-    childrenByParent.set(parentId, children)
-  }
-
-  return {
-    parentTasks,
-    childrenByParent,
-  }
-}
-
 export function buildGraph(
   tasks: Array<Pick<TaskInput, 'id' | 'dependeDeId' | 'orden'>>,
   dependencies: TaskDependency[] = []
@@ -189,21 +144,16 @@ export function resolveDependencies(
   holidays: ReadonlySet<string>,
   dependencies: TaskDependency[] = []
 ): ScheduleTask[] {
-  const { parentTasks, childrenByParent } = buildHierarchyIndex(tasks)
-  const parentIds = new Set(parentTasks.map((task) => task.id))
-  const parentDependencies = dependencies.filter(
-    (dependency) => parentIds.has(dependency.taskId) && parentIds.has(dependency.dependsOnTaskId)
-  )
-  const sorted = topologicalSort(parentTasks, parentDependencies)
+  const sorted = topologicalSort(tasks, dependencies)
   const scheduled = new Map<string, ScheduleTask>()
-  const predecessorsByTask = buildPredecessorMap(parentTasks, parentDependencies)
+  const predecessorsByTask = buildPredecessorMap(tasks, dependencies)
 
-  for (const parentTask of sorted) {
-    if (parentTask.duracionDias < 1) {
-      throw new Error(`INVALID_DURATION:${parentTask.id}:${parentTask.duracionDias}`)
+  for (const task of sorted) {
+    if (task.duracionDias < 1) {
+      throw new Error(`INVALID_DURATION:${task.id}:${task.duracionDias}`)
     }
 
-    const predecessorIds = predecessorsByTask.get(parentTask.id) ?? []
+    const predecessorIds = predecessorsByTask.get(task.id) ?? []
     const rawStart = predecessorIds.length > 0
       ? new Date(
           Math.max(
@@ -218,47 +168,13 @@ export function resolveDependencies(
         )
       : toUtcDateOnly(projectStartDate)
 
-    const parentStart = nextWorkingDay(rawStart, holidays)
-    const children = childrenByParent.get(parentTask.id) ?? []
+    const taskStart = nextWorkingDay(rawStart, holidays)
+    const taskEnd = addWorkingDays(taskStart, task.duracionDias, holidays)
 
-    let parentEnd = addWorkingDays(parentStart, parentTask.duracionDias, holidays)
-    let derivedParentDuration = parentTask.duracionDias
-
-    if (children.length > 0) {
-      let maxChildEnd = parentStart
-
-      for (const childTask of children) {
-        if (childTask.duracionDias < 1) {
-          throw new Error(`INVALID_DURATION:${childTask.id}:${childTask.duracionDias}`)
-        }
-
-        const offsetDias = childTask.offsetDias ?? 0
-        if (!Number.isInteger(offsetDias) || offsetDias < 0) {
-          throw new Error(`INVALID_OFFSET:${childTask.id}:${offsetDias}`)
-        }
-
-        const childStart = addWorkingDays(parentStart, offsetDias + 1, holidays)
-        const childEnd = addWorkingDays(childStart, childTask.duracionDias, holidays)
-        if (childEnd.getTime() > maxChildEnd.getTime()) {
-          maxChildEnd = childEnd
-        }
-
-        scheduled.set(childTask.id, {
-          ...childTask,
-          fechaInicio: toIsoDate(childStart),
-          fechaFin: toIsoDate(childEnd),
-        })
-      }
-
-      parentEnd = maxChildEnd
-      derivedParentDuration = countWorkingDays(parentStart, parentEnd, holidays)
-    }
-
-    scheduled.set(parentTask.id, {
-      ...parentTask,
-      duracionDias: derivedParentDuration,
-      fechaInicio: toIsoDate(parentStart),
-      fechaFin: toIsoDate(parentEnd),
+    scheduled.set(task.id, {
+      ...task,
+      fechaInicio: toIsoDate(taskStart),
+      fechaFin: toIsoDate(taskEnd),
     })
   }
 

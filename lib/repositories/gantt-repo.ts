@@ -34,8 +34,6 @@ type DbTaskRow = {
   nombre: string;
   duracion_dias: number;
   depende_de_id: string | null;
-  parent_id: string | null;
-  offset_dias: number;
   orden: number;
 };
 
@@ -62,8 +60,6 @@ type MutateTaskGraphPayload = {
   nombre?: string;
   duracion_dias?: number;
   depende_de_id?: string | null;
-  parent_id?: string | null;
-  offset_dias?: number;
   smart_insert?: {
     strategy: 'insert' | 'branch';
     conflictParentId: string;
@@ -140,7 +136,7 @@ export class GanttRepo {
 
     const tareasQuery = this.supabase
       .from("tareas")
-      .select("id, project_id, obra_id, nombre, duracion_dias, depende_de_id, parent_id, offset_dias, orden")
+      .select("id, project_id, obra_id, nombre, duracion_dias, depende_de_id, orden")
       .eq("obra_id", obraId)
       .eq("project_id", projectId)
       .order("orden", { ascending: true })
@@ -306,8 +302,6 @@ export class GanttRepo {
         nombre: task.nombre,
         duracion_dias: task.duracionDias,
         depende_de_id: task.dependeDeId,
-        parent_id: task.parentId ?? null,
-        offset_dias: task.offsetDias ?? 0,
         orden: task.orden,
       },
       { onConflict: "id" }
@@ -369,8 +363,6 @@ export class GanttRepo {
       return row.duracion_dias
     })(),
     dependeDeId: row.depende_de_id,
-    parentId: row.parent_id,
-    offsetDias: row.offset_dias ?? 0,
     orden: row.orden,
   });
 

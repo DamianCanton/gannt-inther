@@ -162,8 +162,6 @@ describe('/obra/[id]/print route integration', () => {
           nombre: 'Padre visible',
           duracionDias: 2,
           dependeDeId: null,
-          parentId: null,
-          offsetDias: 0,
           orden: 1,
         },
         {
@@ -173,8 +171,6 @@ describe('/obra/[id]/print route integration', () => {
           nombre: 'Subtarea visible',
           duracionDias: 2,
           dependeDeId: null,
-          parentId: 'P1',
-          offsetDias: 1,
           orden: 2,
         },
         {
@@ -184,8 +180,6 @@ describe('/obra/[id]/print route integration', () => {
           nombre: 'Oculta no visible',
           duracionDias: 1,
           dependeDeId: null,
-          parentId: null,
-          offsetDias: 0,
           orden: 3,
         },
       ],
@@ -195,7 +189,6 @@ describe('/obra/[id]/print route integration', () => {
 
     const config = serializePrintConfig({
       selectionMode: 'visible',
-      includeVisibleSubtasks: false,
       includeOneDayTasks: false,
       expandAllBeforePrint: false,
       visibleTaskIds: ['P1', 'C1'],
@@ -209,7 +202,7 @@ describe('/obra/[id]/print route integration', () => {
     render(page)
 
     expect(screen.getByText('Padre visible')).toBeTruthy()
-    expect(screen.queryByText('Subtarea visible')).toBeNull()
+    expect(screen.getByText('Subtarea visible')).toBeTruthy()
     expect(screen.queryByText('Oculta no visible')).toBeNull()
   })
 })

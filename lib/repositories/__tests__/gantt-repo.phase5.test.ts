@@ -109,4 +109,42 @@ describe('gantt-repo phase 5 methods', () => {
       RepoAccessError
     )
   })
+
+  it('saveTask persists flat payload only (without hierarchy fields)', async () => {
+    const upsertMock = vi.fn().mockResolvedValue({ error: null })
+    const fromMock = vi.fn().mockReturnValue({ upsert: upsertMock })
+
+    const supabaseMock = {
+      from: fromMock,
+    }
+
+    const repo = new GanttRepo(supabaseMock as never)
+
+    await repo.saveTask({
+      projectId: 'p-auth',
+      obraId: 'o-1',
+      task: {
+        id: 't-1',
+        projectId: 'p-auth',
+        obraId: 'o-1',
+        nombre: 'Tarea plana',
+        duracionDias: 3,
+        dependeDeId: 't-0',
+        orden: 10,
+      },
+    })
+
+    const upsertPayload = upsertMock.mock.calls[0]?.[0]
+    expect(upsertPayload).toMatchObject({
+      id: 't-1',
+      project_id: 'p-auth',
+      obra_id: 'o-1',
+      nombre: 'Tarea plana',
+      duracion_dias: 3,
+      depende_de_id: 't-0',
+      orden: 10,
+    })
+    expect(upsertPayload).not.toHaveProperty('parent_id')
+    expect(upsertPayload).not.toHaveProperty('offset_dias')
+  })
 })

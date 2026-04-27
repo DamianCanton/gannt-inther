@@ -11,7 +11,6 @@ import { GanttAlerts } from './gantt-alerts'
 import { GanttGrid } from './gantt-grid'
 import { GanttHeader } from './gantt-header'
 import type { GanttEditIntent, GanttMutationError, GanttMutationResult } from './gantt-types'
-import { flattenHierarchyForInteractive } from './hierarchy-utils'
 import { serializePrintConfig } from './print-projection'
 import { PrintConfigModal, type PrintConfigDraft } from './print-config-modal'
 import { TaskEditor } from './task-editor'
@@ -74,7 +73,6 @@ export function GanttInteractive({
 }: GanttInteractiveProps) {
   const [schedule, setSchedule] = useState<ScheduleTask[]>(initialSchedule)
   const [selectedTaskId, setSelectedTaskId] = useState<Uuid | null>(initialSchedule[0]?.id ?? null)
-  const [collapsedParentIds, setCollapsedParentIds] = useState<Set<Uuid>>(new Set())
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [drawerMode, setDrawerMode] = useState<DrawerMode>('create')
   const [timelineMode, setTimelineMode] = useState<TimelineMode>('daily')
@@ -87,7 +85,6 @@ export function GanttInteractive({
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false)
   const [printDraft, setPrintDraft] = useState<PrintConfigDraft>({
     selectionMode: 'visible',
-    includeVisibleSubtasks: true,
     includeOneDayTasks: true,
     expandAllBeforePrint: false,
     manualTaskIds: [],
@@ -100,33 +97,32 @@ export function GanttInteractive({
     [schedule, selectedTaskId]
   )
 
-  const hierarchyRows = useMemo(
-    () => flattenHierarchyForInteractive(schedule, collapsedParentIds),
-    [schedule, collapsedParentIds]
-  )
+  const orderedSchedule = useMemo(() => {
+    return [...schedule].sort((left, right) => {
+      const dateCompare = left.fechaInicio.localeCompare(right.fechaInicio)
+      if (dateCompare !== 0) {
+        return dateCompare
+      }
+
+      const orderCompare = left.orden - right.orden
+      if (orderCompare !== 0) {
+        return orderCompare
+      }
+
+      return left.id.localeCompare(right.id)
+    })
+  }, [schedule])
 
   const visibleSchedule = useMemo(() => {
     if (!searchQuery.trim()) {
-      return hierarchyRows.map((row) => row.task)
+      return orderedSchedule
     }
 
     const normalized = searchQuery.trim().toLowerCase()
-    return hierarchyRows
-      .filter((row) => row.task.nombre.toLowerCase().includes(normalized))
-      .map((row) => row.task)
-  }, [hierarchyRows, searchQuery])
-
-  const hierarchyRowsByTaskId = useMemo(() => {
-    return new Map(hierarchyRows.map((row) => [row.task.id, row]))
-  }, [hierarchyRows])
-
-  const expandedHierarchyRows = useMemo(
-    () => flattenHierarchyForInteractive(schedule, new Set()),
-    [schedule]
-  )
+    return orderedSchedule.filter((task) => task.nombre.toLowerCase().includes(normalized))
+  }, [orderedSchedule, searchQuery])
 
   const visibleTaskIds = useMemo(() => visibleSchedule.map((task) => task.id), [visibleSchedule])
-  const expandedTaskIds = useMemo(() => expandedHierarchyRows.map((row) => row.task.id), [expandedHierarchyRows])
 
   const cycleWarning = useMemo(() => {
     const cycle = detectCycle(schedule)
@@ -171,18 +167,6 @@ export function GanttInteractive({
     }
   }
 
-  function handleToggleParent(parentId: Uuid) {
-    setCollapsedParentIds((previous) => {
-      const next = new Set(previous)
-      if (next.has(parentId)) {
-        next.delete(parentId)
-      } else {
-        next.add(parentId)
-      }
-      return next
-    })
-  }
-
   function handleSelectTask(taskId: Uuid) {
     setSelectedTaskId(taskId)
     setDrawerMode('edit')
@@ -196,13 +180,11 @@ export function GanttInteractive({
   }
 
   function handleConfirmPrint() {
-    const visibleIdsForPrint = printDraft.expandAllBeforePrint ? expandedTaskIds : visibleTaskIds
     const printConfig: PrintConfig = {
       selectionMode: printDraft.selectionMode,
-      includeVisibleSubtasks: printDraft.includeVisibleSubtasks,
       includeOneDayTasks: printDraft.includeOneDayTasks,
       expandAllBeforePrint: printDraft.expandAllBeforePrint,
-      visibleTaskIds: visibleIdsForPrint,
+      visibleTaskIds,
       manualTaskIds: printDraft.manualTaskIds,
     }
 
@@ -350,20 +332,16 @@ export function GanttInteractive({
       <PrintConfigModal
         isOpen={isPrintModalOpen}
         draft={printDraft}
-        taskOptions={expandedHierarchyRows.map((row) => ({
-          id: row.task.id,
-          nombre: row.task.nombre,
-          depth: row.depth,
-          duracionDias: row.task.duracionDias,
+        taskOptions={orderedSchedule.map((task) => ({
+          id: task.id,
+          nombre: task.nombre,
+          duracionDias: task.duracionDias,
         }))}
         onClose={() => {
           setIsPrintModalOpen(false)
         }}
         onSelectionModeChange={(selectionMode) => {
           setPrintDraft((previous) => ({ ...previous, selectionMode }))
-        }}
-        onIncludeVisibleSubtasksChange={(includeVisibleSubtasks) => {
-          setPrintDraft((previous) => ({ ...previous, includeVisibleSubtasks }))
         }}
         onIncludeOneDayTasksChange={(includeOneDayTasks) => {
           setPrintDraft((previous) => ({ ...previous, includeOneDayTasks }))
@@ -398,8 +376,6 @@ export function GanttInteractive({
             obraStartDate={obraStartDate}
             selectedTaskId={selectedTaskId}
             onSelectTask={handleSelectTask}
-            hierarchyRowsByTaskId={hierarchyRowsByTaskId}
-            onToggleParent={handleToggleParent}
             forcedScale={timelineMode === 'daily' ? 'daily' : 'weekly'}
             showHolidays={showHolidays}
           />

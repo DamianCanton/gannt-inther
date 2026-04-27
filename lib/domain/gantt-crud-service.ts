@@ -32,8 +32,6 @@ export type CreateTaskCommand = {
   nombre: string
   duracionDias: number
   dependeDeId: Uuid | null
-  parentId?: Uuid | null
-  offsetDias?: number
   smartInsert?: SmartInsertPayload
 }
 
@@ -44,8 +42,6 @@ export type UpdateTaskCommand = {
   nombre?: string
   duracionDias?: number
   dependeDeId: Uuid | null
-  parentId?: Uuid | null
-  offsetDias?: number
   smartInsert?: SmartInsertPayload
 }
 
@@ -64,8 +60,6 @@ export interface PreparedTaskMutation {
     nombre?: string
     duracion_dias?: number
     depende_de_id?: Uuid | null
-    parent_id?: Uuid | null
-    offset_dias?: number
     smart_insert?: SmartInsertPayload
   }
   previewTasks: TaskInput[]
@@ -118,7 +112,6 @@ export class GanttCrudService {
     command: TaskMutationCommand
   }): PreparedTaskMutation {
     const { schedule, command } = params
-    this.assertExistingHierarchyInvariant(schedule.tasks)
 
     this.assertObraScope(schedule.obra.id, command.obraId)
 
@@ -143,19 +136,10 @@ export class GanttCrudService {
       const nombre = this.assertValidNombre(command.nombre)
       const duracionDias = this.assertValidDuration(command.duracionDias)
       const dependeDeId = command.dependeDeId
-      const parentId = command.parentId ?? null
-      const offsetDias = this.assertValidOffset(command.offsetDias ?? 0)
-      this.assertParentOnlyDependencyInvariant({ parentId, dependeDeId })
       this.assertValidDependency({
         schedule,
         taskId: createdTaskId,
         dependeDeId,
-      })
-      this.assertHierarchyAssignment({
-        schedule,
-        taskId: createdTaskId,
-        parentId,
-        offsetDias,
       })
 
       // Determine the orden for the new task.
@@ -181,8 +165,6 @@ export class GanttCrudService {
         nombre,
         duracionDias,
         dependeDeId,
-        parentId,
-        offsetDias,
         orden: nextOrden,
       }
 
@@ -203,8 +185,6 @@ export class GanttCrudService {
           nombre,
           duracion_dias: duracionDias,
           depende_de_id: dependeDeId,
-          parent_id: parentId,
-          offset_dias: offsetDias,
           smart_insert: command.smartInsert,
         },
         previewTasks,
@@ -226,35 +206,12 @@ export class GanttCrudService {
     const dependeDeId = command.dependeDeId === undefined
       ? existingTask.dependeDeId
       : command.dependeDeId
-    const parentId = command.parentId === undefined
-      ? existingTask.parentId ?? null
-      : command.parentId
-    const offsetDias = command.offsetDias === undefined
-      ? existingTask.offsetDias ?? 0
-      : this.assertValidOffset(command.offsetDias)
-
-    this.assertParentOnlyDependencyInvariant({ parentId, dependeDeId })
-
-    this.assertParentDurationEditAllowed({
-      schedule,
-      taskId: existingTask.id,
-      previousDuration: existingTask.duracionDias,
-      nextDuration: duracionDias,
-      isExplicitDurationUpdate: command.duracionDias !== undefined,
-    })
 
     this.assertValidDependency({
       schedule,
       taskId: existingTask.id,
       dependeDeId,
     })
-    this.assertHierarchyAssignment({
-      schedule,
-      taskId: existingTask.id,
-      parentId,
-      offsetDias,
-    })
-
     const previewTasks = schedule.tasks.map((task) => {
       if (task.id !== existingTask.id) {
         return task
@@ -265,12 +222,9 @@ export class GanttCrudService {
         nombre,
         duracionDias,
         dependeDeId,
-        parentId,
-        offsetDias,
       }
     })
 
-    this.assertExistingHierarchyInvariant(previewTasks)
     this.assertNoCycle(previewTasks)
 
     return {
@@ -280,8 +234,6 @@ export class GanttCrudService {
         nombre,
         duracion_dias: duracionDias,
         depende_de_id: dependeDeId,
-        parent_id: parentId,
-        offset_dias: offsetDias,
         smart_insert: command.smartInsert,
       },
       previewTasks,
@@ -290,17 +242,11 @@ export class GanttCrudService {
   }
 
   public buildCanonicalDependencies(
-    tasks: Array<Pick<TaskInput, 'id' | 'dependeDeId' | 'parentId'>>
+    tasks: Array<Pick<TaskInput, 'id' | 'dependeDeId'>>
   ): TaskDependency[] {
-    const parentTaskIds = new Set(
-      tasks
-        .filter((task) => (task.parentId ?? null) === null)
-        .map((task) => task.id)
-    )
-
     return tasks
       .filter((task): task is Pick<TaskInput, 'id' | 'dependeDeId'> & { dependeDeId: Uuid } =>
-        task.dependeDeId !== null && parentTaskIds.has(task.id) && parentTaskIds.has(task.dependeDeId)
+        task.dependeDeId !== null
       )
       .map((task) => ({
         taskId: task.id,
@@ -332,14 +278,6 @@ export class GanttCrudService {
     return duration
   }
 
-  private assertValidOffset(offset: number): number {
-    if (!Number.isInteger(offset) || offset < 0) {
-      throw new TaskMutationError('VALIDATION_ERROR', 'Child offset must be a non-negative integer.')
-    }
-
-    return offset
-  }
-
   private assertValidDependency(params: {
     schedule: ObraSchedule
     taskId: Uuid
@@ -360,109 +298,9 @@ export class GanttCrudService {
   }
 
   private assertNoCycle(tasks: TaskInput[]): void {
-    const parentTasks = tasks.filter((task) => (task.parentId ?? null) === null)
-    const cycle = detectCycle(parentTasks)
+    const cycle = detectCycle(tasks)
     if (cycle.length > 0) {
       throw new TaskMutationError('DEPENDENCY_CYCLE', `Cycle detected: ${cycle.join(' -> ')}`)
-    }
-  }
-
-  private assertExistingHierarchyInvariant(tasks: TaskInput[]): void {
-    const taskById = new Map(tasks.map((task) => [task.id, task]))
-
-    for (const task of tasks) {
-      const parentId = task.parentId ?? null
-      const offsetDias = task.offsetDias ?? 0
-
-      this.assertValidOffset(offsetDias)
-
-      if (parentId === null) {
-        if (offsetDias !== 0) {
-          throw new TaskMutationError('VALIDATION_ERROR', 'Top-level tasks must keep offset 0.')
-        }
-        continue
-      }
-
-      if (task.dependeDeId !== null) {
-        throw new TaskMutationError('VALIDATION_ERROR', 'Child tasks cannot carry dependencies.')
-      }
-
-      if (parentId === task.id) {
-        throw new TaskMutationError('VALIDATION_ERROR', 'Task cannot be parent of itself.')
-      }
-
-      const parentTask = taskById.get(parentId)
-      if (!parentTask) {
-        throw new TaskMutationError('VALIDATION_ERROR', 'Parent task not found in obra scope.')
-      }
-
-      if ((parentTask.parentId ?? null) !== null) {
-        throw new TaskMutationError('VALIDATION_ERROR', 'Hierarchy depth exceeds V1 limit (max depth 1).')
-      }
-    }
-  }
-
-  private assertHierarchyAssignment(params: {
-    schedule: ObraSchedule
-    taskId: Uuid
-    parentId: Uuid | null
-    offsetDias: number
-  }): void {
-    const { schedule, taskId, parentId, offsetDias } = params
-
-    if (parentId === null) {
-      if (offsetDias !== 0) {
-        throw new TaskMutationError('VALIDATION_ERROR', 'Top-level tasks must keep offset 0.')
-      }
-      return
-    }
-
-    if (parentId === taskId) {
-      throw new TaskMutationError('VALIDATION_ERROR', 'Task cannot be parent of itself.')
-    }
-
-    const parentTask = schedule.tasks.find((task) => task.id === parentId)
-    if (!parentTask) {
-      throw new TaskMutationError('VALIDATION_ERROR', 'Parent task is outside obra scope.')
-    }
-
-    if ((parentTask.parentId ?? null) !== null) {
-      throw new TaskMutationError('VALIDATION_ERROR', 'Hierarchy depth exceeds V1 limit (max depth 1).')
-    }
-
-    if (parentTask.duracionDias <= 1) {
-      throw new TaskMutationError('VALIDATION_ERROR', '1-day parent tasks cannot have children.')
-    }
-  }
-
-  private assertParentOnlyDependencyInvariant(params: {
-    parentId: Uuid | null
-    dependeDeId: Uuid | null
-  }): void {
-    if (params.parentId !== null && params.dependeDeId !== null) {
-      throw new TaskMutationError('VALIDATION_ERROR', 'Child tasks cannot carry dependencies.')
-    }
-  }
-
-  private assertParentDurationEditAllowed(params: {
-    schedule: ObraSchedule
-    taskId: Uuid
-    previousDuration: number
-    nextDuration: number
-    isExplicitDurationUpdate: boolean
-  }): void {
-    const { schedule, taskId, previousDuration, nextDuration, isExplicitDurationUpdate } = params
-
-    if (!isExplicitDurationUpdate || previousDuration === nextDuration) {
-      return
-    }
-
-    const hasChildren = schedule.tasks.some((task) => (task.parentId ?? null) === taskId)
-    if (hasChildren) {
-      throw new TaskMutationError(
-        'VALIDATION_ERROR',
-        'Parent duration is derived from children and cannot be edited manually.'
-      )
     }
   }
 }

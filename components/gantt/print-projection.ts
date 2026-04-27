@@ -2,7 +2,6 @@ import type { PrintConfig, ScheduleTask, Uuid } from '@/types/gantt'
 
 export const DEFAULT_PRINT_CONFIG: PrintConfig = {
   selectionMode: 'visible',
-  includeVisibleSubtasks: true,
   includeOneDayTasks: true,
   expandAllBeforePrint: false,
   visibleTaskIds: [],
@@ -22,7 +21,6 @@ function normalizePrintConfig(value: unknown): PrintConfig {
 
   return {
     selectionMode: raw.selectionMode === 'manual' ? 'manual' : 'visible',
-    includeVisibleSubtasks: raw.includeVisibleSubtasks !== false,
     includeOneDayTasks: raw.includeOneDayTasks !== false,
     expandAllBeforePrint: raw.expandAllBeforePrint === true,
     visibleTaskIds: isUuidArray(raw.visibleTaskIds) ? raw.visibleTaskIds : [],
@@ -63,10 +61,6 @@ export function projectPrintableTasks(params: {
     const includedBySelection = hasSelectedIds ? selectedIds.has(task.id) : true
 
     if (!includedBySelection) {
-      return false
-    }
-
-    if (!config.includeVisibleSubtasks && (task.parentId ?? null) !== null) {
       return false
     }
 

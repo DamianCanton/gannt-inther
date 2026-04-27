@@ -22,8 +22,6 @@ export type MutateTaskInput = {
       nombre: string
       duracionDias: number
       dependeDeId: Uuid | null
-      parentId?: Uuid | null
-      offsetDias?: number
       smartInsert?: SmartInsertPayload
     }
   | {
@@ -32,8 +30,6 @@ export type MutateTaskInput = {
       nombre?: string
       duracionDias?: number
       dependeDeId: Uuid | null
-      parentId?: Uuid | null
-      offsetDias?: number
       smartInsert?: SmartInsertPayload
     }
   | {
@@ -158,8 +154,6 @@ export async function saveTaskChange(input: {
   nombre: string
   duracionDias: number
   dependeDeId: Uuid | null
-  parentId?: Uuid | null
-  offsetDias?: number
   smartInsert?: SmartInsertPayload
 }): Promise<GanttMutationResult> {
   return mutateTask({
@@ -169,8 +163,6 @@ export async function saveTaskChange(input: {
     nombre: input.nombre,
     duracionDias: input.duracionDias,
     dependeDeId: input.dependeDeId,
-    parentId: input.parentId ?? null,
-    offsetDias: input.offsetDias ?? 0,
     smartInsert: input.smartInsert,
   })
 }

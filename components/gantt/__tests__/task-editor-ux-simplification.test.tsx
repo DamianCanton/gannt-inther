@@ -15,36 +15,27 @@ const makeTask = (overrides: Partial<ScheduleTask>): ScheduleTask => ({
   nombre: overrides.nombre ?? 'Tarea',
   duracionDias: overrides.duracionDias ?? 1,
   dependeDeId: overrides.dependeDeId ?? null,
-  parentId: overrides.parentId ?? null,
-  offsetDias: overrides.offsetDias ?? 0,
   orden: overrides.orden ?? 1,
   fechaInicio: overrides.fechaInicio ?? '2026-04-06',
   fechaFin: overrides.fechaFin ?? '2026-04-06',
 })
 
 describe('TaskEditor UX simplification', () => {
-  it('starts with advanced fields hidden in create mode and reveals them on demand', () => {
+  it('shows only flat-task controls in create mode (no hierarchy toggles)', () => {
     render(<TaskEditor mode="create" tasks={[makeTask({ id: 'a' })]} onSubmit={vi.fn()} />)
 
     expect(screen.getByRole('combobox', { name: 'Dependencia' })).toBeTruthy()
     expect(screen.queryByRole('combobox', { name: 'Subtareas / Grupo' })).toBeNull()
     expect(screen.queryByLabelText('Offset (días hábiles)')).toBeNull()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Mostrar opciones avanzadas' }))
-
-    expect(screen.getByRole('combobox', { name: 'Dependencia' })).toBeTruthy()
-    expect(screen.getByRole('combobox', { name: 'Subtareas / Grupo' })).toBeTruthy()
-    expect(screen.getByLabelText('Offset (días hábiles)')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /opciones avanzadas/i })).toBeNull()
   })
 
-  it('auto-expands advanced controls when editing a task with hierarchy/dependency/offset', () => {
+  it('keeps edit mode in flat-task controls only', () => {
     const parentTask = makeTask({ id: 'p1', nombre: 'Padre' })
     const selectedTask = makeTask({
       id: 't2',
       nombre: 'Subtarea compleja',
-      parentId: 'p1',
       dependeDeId: null,
-      offsetDias: 2,
     })
 
     render(
@@ -60,9 +51,9 @@ describe('TaskEditor UX simplification', () => {
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Editar' })[0]!)
 
-    const advancedToggle = screen.getByRole('button', { name: 'Ocultar opciones avanzadas' })
-    expect(advancedToggle.getAttribute('aria-expanded')).toBe('true')
     expect(screen.getByRole('combobox', { name: 'Dependencia' })).toBeTruthy()
+    expect(screen.queryByRole('combobox', { name: 'Subtareas / Grupo' })).toBeNull()
+    expect(screen.queryByLabelText('Offset (días hábiles)')).toBeNull()
   })
 
   it('keeps dependency visible by default when editing a task with only dependency data', () => {
@@ -71,8 +62,6 @@ describe('TaskEditor UX simplification', () => {
       id: 't3',
       nombre: 'Dependiente',
       dependeDeId: 'dep-1',
-      parentId: null,
-      offsetDias: 0,
     })
 
     render(
@@ -93,26 +82,14 @@ describe('TaskEditor UX simplification', () => {
     expect(screen.queryByLabelText('Offset (días hábiles)')).toBeNull()
   })
 
-  it('uses a touch-friendly help trigger and clearer hierarchy copy', () => {
+  it('does not render hierarchy help/actions in flat mode', () => {
     render(<TaskEditor mode="create" tasks={[makeTask({ id: 'a' })]} onSubmit={vi.fn()} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Mostrar opciones avanzadas' }))
-
-    const helpButton = screen.getByRole('button', { name: 'Ayuda para Subtareas o Grupo' })
-    expect(helpButton.className).toContain('h-11')
-    expect(helpButton.className).toContain('w-11')
-
-    fireEvent.click(helpButton)
-
-    expect(
-      screen.getByText(/Cuando una tarea tiene padre, pasa a ser subtarea del grupo y su planificación se ordena dentro de ese bloque/i)
-    ).toBeTruthy()
-    expect(
-      screen.getByText(/Si no tiene padre, queda como tarea base y puede usar dependencia externa para arrancar después de otra/i)
-    ).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Ayuda para Subtareas o Grupo' })).toBeNull()
+    expect(screen.queryByText(/subtarea/i)).toBeNull()
   })
 
-  it('keeps long hierarchy help readable on narrow viewport without hiding the form model', () => {
+  it('does not show hierarchy model copy on narrow viewport either', () => {
     const previousInnerWidth = window.innerWidth
     window.innerWidth = 320
     window.dispatchEvent(new Event('resize'))
@@ -120,14 +97,8 @@ describe('TaskEditor UX simplification', () => {
     try {
       render(<TaskEditor mode="create" tasks={[makeTask({ id: 'a' })]} onSubmit={vi.fn()} />)
 
-      fireEvent.click(screen.getByRole('button', { name: 'Mostrar opciones avanzadas' }))
-      fireEvent.click(screen.getByRole('button', { name: 'Ayuda para Subtareas o Grupo' }))
-
-      expect(
-        screen.getByText(/Cuando una tarea tiene padre, pasa a ser subtarea del grupo y su planificación se ordena dentro de ese bloque/i)
-      ).toBeTruthy()
-      expect(screen.getByText(/Si no tiene padre, queda como tarea base y puede usar dependencia externa para arrancar después de otra/i)).toBeTruthy()
-      expect(screen.getByText(/Si la tarea tiene padre, se vuelve subtarea\. Sin padre queda en nivel superior\./i)).toBeTruthy()
+      expect(screen.queryByText(/si la tarea tiene padre/i)).toBeNull()
+      expect(screen.queryByText(/subtarea/i)).toBeNull()
     } finally {
       window.innerWidth = previousInnerWidth
       window.dispatchEvent(new Event('resize'))

@@ -30,7 +30,7 @@ const initialSchedule: ScheduleTask[] = [
   },
 ]
 
-const hierarchySchedule: ScheduleTask[] = [
+const flatScheduleWithLegacyNames: ScheduleTask[] = [
   {
     id: 'P1',
     projectId: 'p1',
@@ -38,8 +38,6 @@ const hierarchySchedule: ScheduleTask[] = [
     nombre: 'Padre',
     duracionDias: 5,
     dependeDeId: null,
-    parentId: null,
-    offsetDias: 0,
     orden: 1,
     fechaInicio: '2026-04-06',
     fechaFin: '2026-04-10',
@@ -51,8 +49,6 @@ const hierarchySchedule: ScheduleTask[] = [
     nombre: 'Hija',
     duracionDias: 2,
     dependeDeId: null,
-    parentId: 'P1',
-    offsetDias: 1,
     orden: 2,
     fechaInicio: '2026-04-07',
     fechaFin: '2026-04-08',
@@ -120,7 +116,7 @@ describe('interactive gantt integration', () => {
     expect(screen.getAllByText('Estructura').length).toBeGreaterThan(0)
   })
 
-  it('collapses and expands child visibility in interactive grid', () => {
+  it('does not show collapse controls in flat mode', () => {
     render(
       <GanttInteractive
         obraNombre="Obra Demo"
@@ -128,14 +124,16 @@ describe('interactive gantt integration', () => {
         obraId="o1"
         obraStartDate="2026-04-06"
         printHref="/obra/o1/print"
-        initialSchedule={hierarchySchedule}
+        initialSchedule={flatScheduleWithLegacyNames}
         onMutateTask={vi.fn()}
       />
     )
 
     expect(screen.getByRole('button', { name: /Hija · 2026-04-07 → 2026-04-08/ })).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Contraer Padre' }))
-    expect(screen.queryByRole('button', { name: /Hija · 2026-04-07 → 2026-04-08/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Contraer/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Expandir/i })).toBeNull()
+    expect(screen.queryByText(/Tarea principal/i)).toBeNull()
+    expect(screen.queryByText(/Subtarea/i)).toBeNull()
   })
 
   it('creates a task and reconciles with server schedule', async () => {

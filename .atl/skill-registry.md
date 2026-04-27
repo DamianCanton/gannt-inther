@@ -13,6 +13,10 @@
 | `frontend-design` | Building/styling frontend pages/components with distinctive visual direction |
 | `ui-ux-pro-max` | UI/UX structure, accessibility, interaction quality, and visual decision-making |
 | `vercel-react-best-practices` | React/Next.js performance, rendering, bundle, and data-fetching optimization |
+| `supabase` | Supabase products (Database, Auth, Edge Functions, Realtime, Storage) |
+| `supabase-postgres-best-practices` | Postgres performance optimization and best practices |
+| `react-best-practices` | React patterns for hooks, effects, refs, and component design |
+| `tailwind-design-system` | Build scalable design systems with Tailwind CSS v4 |
 
 ## User-Level Skills (Global)
 
@@ -44,8 +48,6 @@
 | `market-research-reports` | Generate comprehensive market research reports |
 | `xlsx` | Spreadsheet file operations (read, edit, create, convert) |
 | `prd` | Generate Product Requirements Documents |
-| `react-best-practices` | React patterns for hooks, effects, refs, and components |
-| `tailwind-design-system` | Build scalable design systems with Tailwind CSS |
 | `find-skills` | Discover and install agent skills |
 | `ui-ux-pro-max` | UI/UX design intelligence for web and mobile |
 | `vercel-react-best-practices` | React and Next.js performance optimization |
@@ -54,14 +56,27 @@
 
 - **Persistence Mode**: engram
 - **Project**: gannt-inther
-- **Initialized**: 2026-04-23
-- **Last Updated**: 2026-04-24
+- **Initialized**: 2026-04-27
+- **Last Updated**: 2026-04-27
 - **Strict TDD Mode**: enabled ✅
-- **Test Runner**: Vitest
-- **Stack**: Next.js 14 + TypeScript 5.4 (Strict) + Tailwind + Supabase
+- **Test Runner**: Vitest 2.x with jsdom environment
+- **Stack**: Next.js 14 + TypeScript 5.4 (Strict) + Tailwind CSS 3.4 + Supabase
+
+## Testing Capabilities Summary
+
+| Layer | Available | Tool |
+|-------|-----------|------|
+| Unit | ✅ | Vitest + jsdom |
+| Integration | ✅ | @testing-library/react |
+| E2E | ✅ | Playwright |
+| Coverage | ✅ | @vitest/coverage-v8 |
+| Type Check | ✅ | tsc --noEmit |
+| Lint | ✅ | ESLint (next/core-web-vitals) |
 
 ## Notes
 
 - Deduplication: Project-level skills override user-level skills with same name
 - SDD skills (sdd-*) are system infrastructure and always available
 - Skill discovery: Run `find-skills` to search for additional capabilities
+- Test files follow pattern: `**/__tests__/**/*.test.ts` or `**/__tests__/**/*.test.tsx`
+- E2E tests located in: `./e2e/` directory

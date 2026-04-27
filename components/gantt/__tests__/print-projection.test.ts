@@ -16,8 +16,6 @@ const schedule: ScheduleTask[] = [
     nombre: 'Padre visible',
     duracionDias: 3,
     dependeDeId: null,
-    parentId: null,
-    offsetDias: 0,
     orden: 1,
     fechaInicio: '2026-04-06',
     fechaFin: '2026-04-08',
@@ -29,8 +27,6 @@ const schedule: ScheduleTask[] = [
     nombre: 'Subtarea visible',
     duracionDias: 2,
     dependeDeId: null,
-    parentId: 'P1',
-    offsetDias: 1,
     orden: 2,
     fechaInicio: '2026-04-07',
     fechaFin: '2026-04-08',
@@ -42,8 +38,6 @@ const schedule: ScheduleTask[] = [
     nombre: 'Tarea de 1 día',
     duracionDias: 1,
     dependeDeId: null,
-    parentId: null,
-    offsetDias: 0,
     orden: 3,
     fechaInicio: '2026-04-09',
     fechaFin: '2026-04-09',
@@ -62,7 +56,6 @@ describe('print projection helpers', () => {
   it('serializes and deserializes explicit PrintConfig shape', () => {
     const config = makeConfig({
       selectionMode: 'manual',
-      includeVisibleSubtasks: false,
       includeOneDayTasks: false,
       expandAllBeforePrint: true,
       manualTaskIds: ['P1'],
@@ -83,25 +76,15 @@ describe('print projection helpers', () => {
     expect(projected.map((task) => task.id)).toEqual(['P1'])
   })
 
-  it('includes or excludes visible subtasks based on config', () => {
-    const includeSubtasks = projectPrintableTasks({
+  it('keeps selected tasks in flat projection', () => {
+    const projected = projectPrintableTasks({
       tasks: schedule,
       config: makeConfig({
         visibleTaskIds: ['P1', 'C1'],
-        includeVisibleSubtasks: true,
       }),
     })
 
-    const excludeSubtasks = projectPrintableTasks({
-      tasks: schedule,
-      config: makeConfig({
-        visibleTaskIds: ['P1', 'C1'],
-        includeVisibleSubtasks: false,
-      }),
-    })
-
-    expect(includeSubtasks.map((task) => task.id)).toEqual(['P1', 'C1'])
-    expect(excludeSubtasks.map((task) => task.id)).toEqual(['P1'])
+    expect(projected.map((task) => task.id)).toEqual(['P1', 'C1'])
   })
 
   it('includes or excludes one-day tasks based on config', () => {

@@ -16,8 +16,6 @@ const makeTask = (overrides: Partial<TaskInput>): TaskInput => ({
   nombre: overrides.nombre ?? 'Task',
   duracionDias: overrides.duracionDias ?? 1,
   dependeDeId: overrides.dependeDeId ?? null,
-  parentId: overrides.parentId ?? null,
-  offsetDias: overrides.offsetDias ?? 0,
   orden: overrides.orden ?? 1,
 })
 
@@ -28,7 +26,7 @@ const baseTasks: TaskInput[] = [
 ]
 
 describe('gantt-dag', () => {
-  it('builds graph with adjacency and in-degree from legacy links', () => {
+  it('builds graph with adjacency and in-degree from dependeDeId links', () => {
     const graph = buildGraph(baseTasks)
 
     expect(graph.adjacency.get('A')).toEqual(['B'])
@@ -220,27 +218,46 @@ describe('gantt-dag', () => {
     ).toThrow('INVALID_DURATION:A:0')
   })
 
-  it('schedules only parent tasks in DAG and derives child dates by parent start + offset', () => {
+  it('schedules by flat dependencies only (dependeDeId/canonical edges)', () => {
     const scheduled = recalculateCascade({
       tasks: [
-        makeTask({ id: 'P1', nombre: 'Parent 1', duracionDias: 1, parentId: null, orden: 1 }),
-        makeTask({ id: 'C1', nombre: 'Child 1', duracionDias: 1, parentId: 'P1', offsetDias: 0, orden: 2 }),
-        makeTask({ id: 'C2', nombre: 'Child 2', duracionDias: 2, parentId: 'P1', offsetDias: 3, orden: 3 }),
-        makeTask({ id: 'P2', nombre: 'Parent 2', duracionDias: 2, parentId: null, dependeDeId: 'P1', orden: 4 }),
+        makeTask({ id: 'A', nombre: 'A', duracionDias: 2, orden: 1 }),
+        makeTask({ id: 'B', nombre: 'B', duracionDias: 1, dependeDeId: 'A', orden: 2 }),
+        makeTask({ id: 'C', nombre: 'C', duracionDias: 1, dependeDeId: 'B', orden: 3 }),
       ],
-      dependencies: [{ taskId: 'P2', dependsOnTaskId: 'P1', kind: 'FS' }],
+      dependencies: [
+        { taskId: 'B', dependsOnTaskId: 'A', kind: 'FS' },
+        { taskId: 'C', dependsOnTaskId: 'B', kind: 'FS' },
+      ],
       obraStartDate: '2026-04-06',
       holidays: new Set(),
     })
 
     const byId = new Map(scheduled.map((task) => [task.id, task]))
 
-    expect(byId.get('P1')?.fechaInicio).toBe('2026-04-06')
-    expect(byId.get('C1')?.fechaInicio).toBe('2026-04-06')
-    expect(byId.get('C2')?.fechaInicio).toBe('2026-04-09')
-    expect(byId.get('C2')?.fechaFin).toBe('2026-04-10')
-    expect(byId.get('P1')?.fechaFin).toBe('2026-04-10')
-    expect(byId.get('P1')?.duracionDias).toBe(5)
-    expect(byId.get('P2')?.fechaInicio).toBe('2026-04-13')
+    expect(byId.get('A')?.fechaInicio).toBe('2026-04-06')
+    expect(byId.get('A')?.fechaFin).toBe('2026-04-07')
+    expect(byId.get('B')?.fechaInicio).toBe('2026-04-08')
+    expect(byId.get('B')?.fechaFin).toBe('2026-04-08')
+    expect(byId.get('C')?.fechaInicio).toBe('2026-04-09')
+  })
+
+  it('uses dependeDeId fallback when canonical dependencies are omitted', () => {
+    const scheduled = recalculateCascade({
+      tasks: [
+        makeTask({ id: 'A', nombre: 'A', duracionDias: 2, orden: 1 }),
+        makeTask({ id: 'B', nombre: 'B', duracionDias: 1, dependeDeId: 'A', orden: 2 }),
+        makeTask({ id: 'C', nombre: 'C', duracionDias: 1, dependeDeId: 'B', orden: 3 }),
+      ],
+      dependencies: [],
+      obraStartDate: '2026-04-06',
+      holidays: new Set(),
+    })
+
+    const byId = new Map(scheduled.map((task) => [task.id, task]))
+
+    expect(byId.get('A')?.fechaInicio).toBe('2026-04-06')
+    expect(byId.get('B')?.fechaInicio).toBe('2026-04-08')
+    expect(byId.get('C')?.fechaInicio).toBe('2026-04-09')
   })
 })

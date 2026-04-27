@@ -17,8 +17,6 @@ export interface TaskInput {
   nombre: string;
   duracionDias: number;
   dependeDeId: Uuid | null;
-  parentId?: Uuid | null;
-  offsetDias?: number;
   orden: number;
 }
 
@@ -84,7 +82,6 @@ export type PrintSelectionMode = 'visible' | 'manual';
  */
 export interface PrintConfig {
   selectionMode: PrintSelectionMode;
-  includeVisibleSubtasks: boolean;
   includeOneDayTasks: boolean;
   expandAllBeforePrint: boolean;
   visibleTaskIds: Uuid[];
@@ -97,8 +94,6 @@ export interface PrintTaskPayload {
   duracionDias: number;
   fechaInicio: IsoDate;
   fechaFin: IsoDate;
-  parentId: Uuid | null;
-  offsetDias: number;
 }
 
 // ============================================================
