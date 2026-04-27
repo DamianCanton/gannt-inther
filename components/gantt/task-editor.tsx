@@ -104,7 +104,7 @@ export function TaskEditor(props: TaskEditorProps) {
   const onSelectTask = mode === 'edit' ? props.onSelectTask : undefined
 
   // Internal form state
-  const [intent, setIntent] = useState<GanttEditorMode>('create')
+  const [intent, setIntent] = useState<GanttEditorMode>(mode === 'edit' ? 'update' : 'create')
   const [nombre, setNombre] = useState('')
   const [duracionDias, setDuracionDias] = useState(1)
   const [dependeDeId, setDependeDeId] = useState<Uuid | ''>('')

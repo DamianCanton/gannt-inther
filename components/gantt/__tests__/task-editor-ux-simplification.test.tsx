@@ -152,6 +152,6 @@ describe('GanttInteractive responsiveness', () => {
 
     const root = container.firstElementChild as HTMLElement
     expect(root.className).toContain('p-4')
-    expect(root.className).toContain('md:p-8')
+    expect(root.className).toContain('md:p-6')
   })
 })

@@ -39,22 +39,21 @@ test('login -> /obras -> /obra/[id] -> /obra/[id]/print happy path', async ({ pa
   await expect(printPage).toHaveURL(new RegExp(`/obra/${obraId!}/print$`))
   await expect(printPage.getByText('Escala:')).toBeVisible()
   await expect(
-    printPage.getByText(/Preparando impresión…|Abrimos el diálogo de impresión automáticamente\./)
+    printPage.getByText(/El PDF ya no depende de la impresión del navegador\./)
   ).toBeVisible()
 
   await expect
     .poll(async () => printPage.evaluate(() => (window as Window & { __printCalls?: number }).__printCalls ?? 0))
+    .toBe(0)
+
+  await expect(printPage.getByTestId('print-format-contract')).toHaveAttribute('data-print-format', 'auto-fit')
+  await expect(printPage.getByTestId('print-format-contract')).toHaveAttribute('data-pagination-safe', 'false')
+
+  await printPage.getByRole('button', { name: /Exportar/ }).click()
+  const manualPrintButton = printPage.getByRole('button', { name: 'Impresión nativa (compatibilidad)' })
+  await manualPrintButton.click()
+
+  await expect
+    .poll(async () => printPage.evaluate(() => (window as Window & { __printCalls?: number }).__printCalls ?? 0))
     .toBe(1)
-
-  await expect(printPage.getByTestId('print-format-contract')).toHaveAttribute('data-print-format', 'A4 landscape')
-  await expect(printPage.getByTestId('print-format-contract')).toHaveAttribute('data-pagination-safe', 'true')
-
-  const manualPrintButton = printPage.getByRole('button', { name: 'Imprimir ahora' })
-  if (await manualPrintButton.isVisible().catch(() => false)) {
-    await manualPrintButton.click()
-
-    await expect
-      .poll(async () => printPage.evaluate(() => (window as Window & { __printCalls?: number }).__printCalls ?? 0))
-      .toBe(2)
-  }
 })

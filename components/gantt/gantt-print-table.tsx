@@ -1,6 +1,6 @@
 import { DEFAULT_PRINT_CONFIG } from './print-projection'
 import type { ObraSchedule, PrintConfig } from '@/types/gantt'
-import { PrintTimelineTable } from './print-timeline-table'
+import { GanttExportSurface } from './export/GanttExportSurface'
 
 export interface GanttPrintTableProps {
   obra: ObraSchedule
@@ -8,5 +8,5 @@ export interface GanttPrintTableProps {
 }
 
 export function GanttPrintTable({ obra, printConfig = DEFAULT_PRINT_CONFIG }: GanttPrintTableProps) {
-  return <PrintTimelineTable obra={obra} printConfig={printConfig} />
+  return <GanttExportSurface obra={obra} printConfig={printConfig} />
 }

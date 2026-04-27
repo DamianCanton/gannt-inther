@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { CalendarDays, Building2, FilePlus2, FolderKanban, UserRound } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -57,10 +58,26 @@ export function CreateObraForm({ action, disabled = false, onSuccess }: CreateOb
     <form
       ref={formRef}
       onSubmit={handleSubmit}
-      className="rounded-lg border border-gray-200/80 bg-white p-5 shadow-xs"
+      className="space-y-6"
     >
+      <div className="rounded-2xl border border-slate-200 bg-[linear-gradient(135deg,rgba(8,30,68,0.035),rgba(37,99,235,0.06))] p-5">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-[0_14px_30px_-18px_rgba(37,99,235,0.95)]">
+            <FilePlus2 className="h-5 w-5" strokeWidth={2.2} />
+          </div>
+          <div className="space-y-1">
+            <p className="text-[18px] font-semibold tracking-tight text-slate-900">
+              Crear diagrama nuevo
+            </p>
+            <p className="text-[14px] leading-6 text-slate-500">
+              Definí la obra base, su fecha de inicio y el tipo de cronograma para empezar.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {error && (
-        <div className="mb-5 rounded-lg border border-red-200/80 bg-red-50/50 px-4 py-3 text-[13px] text-red-700 flex items-start gap-2.5">
+        <div className="rounded-2xl border border-red-200/80 bg-red-50/80 px-4 py-3 text-[13px] text-red-700 flex items-start gap-2.5">
           <svg
             className="h-4 w-4 text-red-400 mt-0.5 shrink-0"
             fill="none"
@@ -79,53 +96,89 @@ export function CreateObraForm({ action, disabled = false, onSuccess }: CreateOb
       )}
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Input
-          name="nombre"
-          label="Nombre de la obra"
-          placeholder="Ej: Edificio Torres del Lago"
-          required
-          disabled={isPending || disabled}
-          className="border-gray-200/80 bg-white shadow-xs text-[13px] focus-visible:ring-primary/30 focus-visible:border-primary/50"
-        />
-        <Input
-          name="fechaInicioGlobal"
-          label="Fecha de inicio"
-          type="date"
-          required
-          disabled={isPending || disabled}
-          className="border-gray-200/80 bg-white shadow-xs text-[13px] focus-visible:ring-primary/30 focus-visible:border-primary/50"
-        />
-        <Input
-          name="cliente"
-          label="Cliente"
-          placeholder="Opcional"
-          disabled={isPending || disabled}
-          className="border-gray-200/80 bg-white shadow-xs text-[13px] focus-visible:ring-primary/30 focus-visible:border-primary/50"
-        />
-        <Select
-          name="tipoObra"
-          label="Tipo de obra"
-          defaultValue="Tipo A"
-          disabled={isPending || disabled}
-        >
-          <option value="Tipo A">Tipo A</option>
-          <option value="Tipo B">Tipo B</option>
-          <option value="Tipo C">Tipo C</option>
-        </Select>
-        <Input
-          name="vigenciaTexto"
-          label="Vigencia"
-          placeholder="Opcional"
-          className="md:col-span-2 border-gray-200/80 bg-white shadow-xs text-[13px] focus-visible:ring-primary/30 focus-visible:border-primary/50"
-          disabled={isPending || disabled}
-        />
+        <div className="space-y-1.5">
+          <label className="flex items-center gap-2 text-[13px] font-medium text-slate-700" htmlFor="obra-nombre">
+            <Building2 className="h-4 w-4 text-slate-400" strokeWidth={2} />
+            Nombre de la obra
+          </label>
+          <Input
+            id="obra-nombre"
+            name="nombre"
+            placeholder="Ej: Edificio Torres del Lago"
+            required
+            disabled={isPending || disabled}
+            className="h-12 rounded-xl border-slate-200 bg-white text-[14px] shadow-sm focus-visible:border-blue-400 focus-visible:ring-blue-300/40"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="flex items-center gap-2 text-[13px] font-medium text-slate-700" htmlFor="obra-fecha-inicio">
+            <CalendarDays className="h-4 w-4 text-slate-400" strokeWidth={2} />
+            Fecha de inicio
+          </label>
+          <Input
+            id="obra-fecha-inicio"
+            name="fechaInicioGlobal"
+            type="date"
+            required
+            disabled={isPending || disabled}
+            className="h-12 rounded-xl border-slate-200 bg-white text-[14px] shadow-sm focus-visible:border-blue-400 focus-visible:ring-blue-300/40"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="flex items-center gap-2 text-[13px] font-medium text-slate-700" htmlFor="obra-cliente">
+            <UserRound className="h-4 w-4 text-slate-400" strokeWidth={2} />
+            Cliente
+          </label>
+          <Input
+            id="obra-cliente"
+            name="cliente"
+            placeholder="Opcional"
+            disabled={isPending || disabled}
+            className="h-12 rounded-xl border-slate-200 bg-white text-[14px] shadow-sm focus-visible:border-blue-400 focus-visible:ring-blue-300/40"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="flex items-center gap-2 text-[13px] font-medium text-slate-700" htmlFor="obra-tipo">
+            <FolderKanban className="h-4 w-4 text-slate-400" strokeWidth={2} />
+            Tipo de obra
+          </label>
+          <Select
+            id="obra-tipo"
+            name="tipoObra"
+            defaultValue="Tipo A"
+            disabled={isPending || disabled}
+            className="h-12 rounded-xl border-slate-200 bg-white text-[14px] shadow-sm focus-visible:border-blue-400 focus-visible:ring-blue-300/40"
+          >
+            <option value="Tipo A">Tipo A</option>
+            <option value="Tipo B">Tipo B</option>
+            <option value="Tipo C">Tipo C</option>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5 md:col-span-2">
+          <label className="text-[13px] font-medium text-slate-700" htmlFor="obra-vigencia">
+            Vigencia
+          </label>
+          <Input
+            id="obra-vigencia"
+            name="vigenciaTexto"
+            placeholder="Opcional"
+            className="h-12 rounded-xl border-slate-200 bg-white text-[14px] shadow-sm focus-visible:border-blue-400 focus-visible:ring-blue-300/40"
+            disabled={isPending || disabled}
+          />
+        </div>
+
+        <div className="md:col-span-2 flex items-center justify-end gap-3 border-t border-slate-200 pt-4">
         <Button
           type="submit"
-          className="md:col-span-2 bg-primary text-white hover:bg-primary/90 shadow-xs text-[13px] font-medium rounded-lg transition-colors focus-visible:ring-primary/30"
+          className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-[14px] font-medium text-white shadow-[0_10px_24px_-14px_rgba(37,99,235,1)] transition-colors hover:bg-blue-700 focus-visible:ring-blue-400/60"
           disabled={isPending || disabled}
         >
           {isPending ? (
-            <span className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-2">
               <svg
                 className="h-3.5 w-3.5 animate-spin"
                 fill="none"
@@ -147,10 +200,11 @@ export function CreateObraForm({ action, disabled = false, onSuccess }: CreateOb
               </svg>
               Creando...
             </span>
-          ) : (
-            'Crear obra'
+            ) : (
+            'Crear diagrama nuevo'
           )}
         </Button>
+        </div>
       </div>
     </form>
   )

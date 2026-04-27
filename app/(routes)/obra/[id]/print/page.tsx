@@ -1,6 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { GanttRepo, RepoAccessError } from '@/lib/repositories/gantt-repo'
-import { GanttPrintTable, PrintClientControls } from '@/components/gantt'
+import { GanttPrintTable } from '@/components/gantt/gantt-print-table'
+import { PrintClientControls } from '@/components/gantt/print-client-controls'
 import { deserializePrintConfig } from '@/components/gantt/print-projection'
 import { AuthContextError } from '@/lib/auth/auth-context'
 import { ensureObraAccess } from '@/lib/auth/guards'

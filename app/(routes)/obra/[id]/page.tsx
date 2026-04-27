@@ -1,7 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server'
 import { createScheduleWithDetails } from '@/lib/gantt-scheduler'
 import { GanttRepo, RepoAccessError } from '@/lib/repositories/gantt-repo'
-import { GanttInteractive } from '@/components/gantt'
+import { GanttInteractive } from '@/components/gantt/gantt-interactive'
 import { AuthContextError } from '@/lib/auth/auth-context'
 import { ensureObraAccess } from '@/lib/auth/guards'
 import { notFound, redirect } from 'next/navigation'
