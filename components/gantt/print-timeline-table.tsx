@@ -6,9 +6,10 @@ import {
   buildTimelineColumns,
   deriveTimelineScale,
   getTaskTimelineRange,
+  type TimelineScale,
 } from '@/components/gantt/timeline-utils'
 import { DEFAULT_PRINT_CONFIG, projectPrintableTasks } from '@/components/gantt/print-projection'
-import type { ObraSchedule, IsoDate, PrintConfig } from '@/types/gantt'
+import type { ObraSchedule, IsoDate, PrintConfig, ScheduleTask } from '@/types/gantt'
 
 export interface PrintTimelineTableProps {
   obra: ObraSchedule
@@ -37,6 +38,14 @@ function computeObraDateRange(schedule: { fechaInicio: IsoDate; fechaFin: IsoDat
 function capitalize(str: string): string {
   if (!str) return str
   return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
+function resolveScaleMode(printConfig: PrintConfig, schedule: ScheduleTask[], obraStartDate: IsoDate): TimelineScale {
+  if (printConfig.viewMode === 'daily' || printConfig.viewMode === 'weekly') {
+    return printConfig.viewMode
+  }
+
+  return deriveTimelineScale(schedule, obraStartDate)
 }
 
 function computeMonthGroups(columns: { key: string; label: string }[]) {
@@ -75,7 +84,7 @@ export function PrintTimelineTable({ obra, printConfig = DEFAULT_PRINT_CONFIG }:
     config: printConfig,
   })
 
-  const scaleMode = deriveTimelineScale(printableSchedule, obra.obra.fechaInicioGlobal)
+  const scaleMode = resolveScaleMode(printConfig, printableSchedule, obra.obra.fechaInicioGlobal)
   const columns = buildTimelineColumns({
     tasks: printableSchedule,
     obraStartDate: obra.obra.fechaInicioGlobal,

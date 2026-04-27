@@ -16,7 +16,11 @@ export interface ExportColumn {
 }
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
-const LEFT_COLUMNS_WIDTH = 330
+const DURATION_COLUMN_WIDTH = 70
+export const TASK_NAME_COLUMN_MIN_PX = 220
+export const TASK_NAME_COLUMN_MAX_PX = 420
+const TASK_NAME_COLUMN_CHAR_PX = 7.4
+const TASK_NAME_COLUMN_BASE_PADDING_PX = 44
 const ROW_HEIGHT = 30
 const BASE_HEADER_HEIGHT = 136
 const TABLE_HEADER_HEIGHT = 62
@@ -55,6 +59,21 @@ function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(value, max))
+}
+
+export function calculateTaskNameColumnWidth(tasks: Array<{ nombre: string }>): number {
+  const longestLabelLength = tasks.reduce((maxLength, task) => {
+    const normalizedNameLength = task.nombre.trim().length
+    return Math.max(maxLength, normalizedNameLength)
+  }, 0)
+
+  const estimatedWidth = Math.ceil(longestLabelLength * TASK_NAME_COLUMN_CHAR_PX + TASK_NAME_COLUMN_BASE_PADDING_PX)
+
+  return clamp(estimatedWidth, TASK_NAME_COLUMN_MIN_PX, TASK_NAME_COLUMN_MAX_PX)
+}
+
 function formatDate(dateStr: string): string {
   const [year, month, day] = dateStr.split('-').map(Number)
   return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`
@@ -68,6 +87,16 @@ function resolveScale(totalDays: number): ExportScale {
     return 'weekly'
   }
   return 'monthly'
+}
+
+function resolveScaleFromConfig(params: { totalDays: number; viewMode?: PrintConfig['viewMode'] }): ExportScale {
+  const { totalDays, viewMode } = params
+
+  if (viewMode === 'daily' || viewMode === 'weekly' || viewMode === 'monthly') {
+    return viewMode
+  }
+
+  return resolveScale(totalDays)
 }
 
 function computeObraDateRange(schedule: ScheduleTask[]): { firstStart: string | null; lastEnd: string | null } {
@@ -233,12 +262,13 @@ export function GanttExportSurface({ obra, printConfig = DEFAULT_PRINT_CONFIG }:
 
   const { firstStart, lastEnd } = computeObraDateRange(printableSchedule)
   const totalObraDays = firstStart && lastEnd ? countWorkingDays(firstStart, lastEnd, obra.holidays) : 0
-  const scaleMode = resolveScale(totalObraDays)
+  const scaleMode = resolveScaleFromConfig({ totalDays: totalObraDays, viewMode: printConfig.viewMode })
   const columns = buildColumns(printableSchedule, obra.obra.fechaInicioGlobal, scaleMode)
   const monthGroups = scaleMode === 'daily' ? buildMonthGroups(columns) : []
 
+  const taskNameColumnWidth = calculateTaskNameColumnWidth(printableSchedule)
   const timeColumnWidth = SCALE_COLUMN_WIDTH[scaleMode]
-  const exportWidth = LEFT_COLUMNS_WIDTH + columns.length * timeColumnWidth
+  const exportWidth = taskNameColumnWidth + DURATION_COLUMN_WIDTH + columns.length * timeColumnWidth
   const exportHeight = BASE_HEADER_HEIGHT + TABLE_HEADER_HEIGHT + printableSchedule.length * ROW_HEIGHT + FOOTER_HEIGHT
 
   const cliente = capitalize(obra.obra.cliente?.trim() || 'Sin especificar')
@@ -272,7 +302,9 @@ export function GanttExportSurface({ obra, printConfig = DEFAULT_PRINT_CONFIG }:
           monthGroups={monthGroups}
           tasks={printableSchedule}
           getTaskRange={(task) => getTaskRange(task, columns, scaleMode)}
-          taskColumnWidth={timeColumnWidth}
+          taskNameColumnWidth={taskNameColumnWidth}
+          durationColumnWidth={DURATION_COLUMN_WIDTH}
+          timeColumnWidth={timeColumnWidth}
         />
 
         <GanttExportFooter exportDate={new Date().toLocaleDateString('es-AR')} />

@@ -17,6 +17,28 @@ import { TaskEditor } from './task-editor'
 
 type DrawerMode = 'create' | 'edit'
 type TimelineMode = 'daily' | 'weekly' | 'month'
+type DependencyFilterMode = 'all' | 'with-dependencies' | 'without-dependencies'
+type VisibilityFilterMode = 'all' | 'visible-only'
+
+interface FilterState {
+  query: string
+  minDuration: string
+  maxDuration: string
+  dependencyMode: DependencyFilterMode
+  dateFrom: string
+  dateTo: string
+  visibility: VisibilityFilterMode
+}
+
+const DEFAULT_FILTERS: FilterState = {
+  query: '',
+  minDuration: '',
+  maxDuration: '',
+  dependencyMode: 'all',
+  dateFrom: '',
+  dateTo: '',
+  visibility: 'all',
+}
 
 export interface GanttInteractiveProps {
   obraNombre: string
@@ -76,8 +98,8 @@ export function GanttInteractive({
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [drawerMode, setDrawerMode] = useState<DrawerMode>('create')
   const [timelineMode, setTimelineMode] = useState<TimelineMode>('daily')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showDependencies, setShowDependencies] = useState(true)
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS)
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false)
   const [showHolidays, setShowHolidays] = useState(true)
 
   const [saveError, setSaveError] = useState<GanttMutationError | null>(null)
@@ -114,15 +136,58 @@ export function GanttInteractive({
   }, [schedule])
 
   const visibleSchedule = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return orderedSchedule
-    }
+    const normalizedQuery = filters.query.trim().toLowerCase()
+    const minDuration = filters.minDuration.trim() ? Number(filters.minDuration) : null
+    const maxDuration = filters.maxDuration.trim() ? Number(filters.maxDuration) : null
+    const fromDate = filters.dateFrom.trim() ? filters.dateFrom.trim() : null
+    const toDate = filters.dateTo.trim() ? filters.dateTo.trim() : null
 
-    const normalized = searchQuery.trim().toLowerCase()
-    return orderedSchedule.filter((task) => task.nombre.toLowerCase().includes(normalized))
-  }, [orderedSchedule, searchQuery])
+    return orderedSchedule.filter((task) => {
+      if (normalizedQuery && !task.nombre.toLowerCase().includes(normalizedQuery)) {
+        return false
+      }
+
+      if (minDuration !== null && Number.isFinite(minDuration) && task.duracionDias < minDuration) {
+        return false
+      }
+
+      if (maxDuration !== null && Number.isFinite(maxDuration) && task.duracionDias > maxDuration) {
+        return false
+      }
+
+      if (filters.dependencyMode === 'with-dependencies' && !task.dependeDeId) {
+        return false
+      }
+
+      if (filters.dependencyMode === 'without-dependencies' && task.dependeDeId) {
+        return false
+      }
+
+      if (fromDate && task.fechaFin < fromDate) {
+        return false
+      }
+
+      if (toDate && task.fechaInicio > toDate) {
+        return false
+      }
+
+      return true
+    })
+  }, [filters, orderedSchedule])
 
   const visibleTaskIds = useMemo(() => visibleSchedule.map((task) => task.id), [visibleSchedule])
+
+  const hasActiveFilters = useMemo(() => {
+    return (
+      filters.query.trim() !== '' ||
+      filters.minDuration.trim() !== '' ||
+      filters.maxDuration.trim() !== '' ||
+      filters.dependencyMode !== 'all' ||
+      filters.dateFrom.trim() !== '' ||
+      filters.dateTo.trim() !== '' ||
+      filters.visibility !== 'all'
+    )
+  }, [filters])
 
   const cycleWarning = useMemo(() => {
     const cycle = detectCycle(schedule)
@@ -167,6 +232,14 @@ export function GanttInteractive({
     }
   }
 
+  function updateFilter<K extends keyof FilterState>(key: K, value: FilterState[K]) {
+    setFilters((previous) => ({ ...previous, [key]: value }))
+  }
+
+  function clearFilters() {
+    setFilters(DEFAULT_FILTERS)
+  }
+
   function handleSelectTask(taskId: Uuid) {
     setSelectedTaskId(taskId)
     setDrawerMode('edit')
@@ -186,6 +259,7 @@ export function GanttInteractive({
       expandAllBeforePrint: printDraft.expandAllBeforePrint,
       visibleTaskIds,
       manualTaskIds: printDraft.manualTaskIds,
+      viewMode: timelineMode === 'month' ? 'monthly' : timelineMode,
     }
 
     const printConfigQuery = serializePrintConfig(printConfig)
@@ -236,43 +310,16 @@ export function GanttInteractive({
                   onClick={() => {
                     setTimelineMode(option.key)
                   }}
-                   className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
-                     isActive ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                   }`}
-                   aria-pressed={isActive}
-                 >
+                  className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
+                    isActive ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                  aria-pressed={isActive}
+                >
                   {option.label}
                 </button>
               )
             })}
           </div>
-
-          <button
-            type="button"
-            aria-pressed={showDependencies}
-            onClick={() => {
-              setShowDependencies((previous) => !previous)
-            }}
-            className={`inline-flex h-11 items-center gap-3 rounded-2xl border px-4 text-sm font-medium transition-colors ${
-              showDependencies
-                ? 'border-blue-200 bg-blue-50 text-blue-700'
-                : 'border-slate-200 bg-white text-slate-500'
-            }`}
-          >
-            <span
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                showDependencies ? 'bg-blue-600' : 'bg-slate-300'
-              }`}
-              aria-hidden="true"
-            >
-              <span
-                className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                  showDependencies ? 'translate-x-5' : 'translate-x-1'
-                }`}
-              />
-            </span>
-            Dependencias
-          </button>
 
           <button
             type="button"
@@ -298,10 +345,10 @@ export function GanttInteractive({
                 }`}
               />
             </span>
-            Feriados
+            Días no laborables
           </button>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex flex-wrap items-center gap-2">
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <label htmlFor="gantt-search" className="sr-only">
@@ -311,22 +358,114 @@ export function GanttInteractive({
                 id="gantt-search"
                 type="search"
                 placeholder="Buscar tarea…"
-                value={searchQuery}
+                value={filters.query}
                 onChange={(event) => {
-                  setSearchQuery(event.target.value)
+                  updateFilter('query', event.target.value)
                 }}
                 className="h-11 w-64 rounded-2xl border border-slate-200 pl-10 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               />
             </div>
             <button
               type="button"
+              onClick={() => {
+                setIsFiltersOpen((previous) => !previous)
+              }}
               className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-600 hover:bg-slate-50"
             >
               <SlidersHorizontal size={16} />
               Filtros
+              {hasActiveFilters ? (
+                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700">
+                  Activos
+                </span>
+              ) : null}
             </button>
+            {hasActiveFilters ? (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="inline-flex h-11 items-center rounded-2xl border border-slate-200 px-4 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              >
+                Limpiar
+              </button>
+            ) : null}
           </div>
         </div>
+
+        {isFiltersOpen ? (
+          <div className="mt-3 grid gap-3 rounded-2xl border border-slate-200 bg-slate-50/70 p-4 md:grid-cols-2 xl:grid-cols-3">
+            <label className="grid gap-1 text-sm font-medium text-slate-700">
+              Duración mínima (días)
+              <input
+                type="number"
+                min={0}
+                value={filters.minDuration}
+                onChange={(event) => {
+                  updateFilter('minDuration', event.target.value)
+                }}
+                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-slate-700">
+              Duración máxima (días)
+              <input
+                type="number"
+                min={0}
+                value={filters.maxDuration}
+                onChange={(event) => {
+                  updateFilter('maxDuration', event.target.value)
+                }}
+                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-slate-700">
+              Con dependencias
+              <select
+                value={filters.dependencyMode}
+                onChange={(event) => {
+                  updateFilter('dependencyMode', event.target.value as DependencyFilterMode)
+                }}
+                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <option value="all">Todas</option>
+                <option value="with-dependencies">Con dependencias</option>
+                <option value="without-dependencies">Sin dependencias</option>
+              </select>
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-slate-700">
+              Fecha desde
+              <input
+                type="date"
+                value={filters.dateFrom}
+                onChange={(event) => {
+                  updateFilter('dateFrom', event.target.value)
+                }}
+                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              />
+            </label>
+            <label className="grid gap-1 text-sm font-medium text-slate-700">
+              Fecha hasta
+              <input
+                type="date"
+                value={filters.dateTo}
+                onChange={(event) => {
+                  updateFilter('dateTo', event.target.value)
+                }}
+                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              />
+            </label>
+            <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700">
+              <input
+                type="checkbox"
+                checked={filters.visibility === 'visible-only'}
+                onChange={(event) => {
+                  updateFilter('visibility', event.target.checked ? 'visible-only' : 'all')
+                }}
+              />
+              Solo tareas visibles
+            </label>
+          </div>
+        ) : null}
       </section>
 
       <PrintConfigModal
@@ -370,15 +509,21 @@ export function GanttInteractive({
       <GanttAlerts cycleWarning={cycleWarning} saveError={saveError} isMutating={isMutating} />
 
       <div className={`grid gap-4 ${drawerOpen ? 'xl:grid-cols-[minmax(0,1fr)_340px]' : 'grid-cols-1'}`}>
-        <div className="min-w-0">
-          <GanttGrid
-            tasks={visibleSchedule}
-            obraStartDate={obraStartDate}
-            selectedTaskId={selectedTaskId}
-            onSelectTask={handleSelectTask}
-            forcedScale={timelineMode === 'daily' ? 'daily' : 'weekly'}
-            showHolidays={showHolidays}
-          />
+        <div className="min-w-0 space-y-3">
+          {schedule.length > 0 && visibleSchedule.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
+              No hay tareas que coincidan con los filtros activos.
+            </div>
+          ) : (
+            <GanttGrid
+              tasks={visibleSchedule}
+              obraStartDate={obraStartDate}
+              selectedTaskId={selectedTaskId}
+              onSelectTask={handleSelectTask}
+              forcedScale={timelineMode === 'daily' ? 'daily' : 'weekly'}
+              showHolidays={showHolidays}
+            />
+          )}
         </div>
 
         {drawerOpen ? (

@@ -52,6 +52,7 @@ export function GanttGrid({
 
   const scale = forcedScale ?? deriveTimelineScale(tasks, obraStartDate)
   const columns = buildTimelineColumns({ tasks, obraStartDate, scale })
+  const taskIds = new Set(tasks.map((task) => task.id))
   const todayIso = new Date().toISOString().slice(0, 10)
   const todayColumnIndex = columns.findIndex((column) => {
     if (scale === 'daily') {
@@ -199,6 +200,7 @@ export function GanttGrid({
     const isSelected = task.id === selectedTaskId
     const range = getTaskTimelineRange({ task, obraStartDate, scale })
     const rowStatusLabel = 'Tarea'
+    const dependencySource = task.dependeDeId ? tasks.find((candidate) => candidate.id === task.dependeDeId) : null
 
     // Task label cell (sticky left)
     cells.push(
@@ -241,7 +243,7 @@ export function GanttGrid({
           <div
             key={`${task.id}-${column.key}`}
             className={`relative border-b border-r border-slate-200 transition-colors ${
-              isWeekendColumn ? 'bg-slate-50' : 'bg-white'
+              isWeekendColumn ? 'bg-slate-100' : 'bg-white'
             } ${isToday && !isActive ? 'today-marker bg-blue-50' : ''} ${isSelected && !isActive ? 'bg-blue-50/30' : ''}`}
             onClick={() => onSelectTask(task.id)}
             role="gridcell"
@@ -261,6 +263,17 @@ export function GanttGrid({
           </div>
         )
       })
+
+    if (dependencySource && task.dependeDeId !== null && taskIds.has(task.dependeDeId)) {
+      cells.push(
+        <div
+          key={`dep-${dependencySource.id}-${task.id}`}
+          role="img"
+          aria-label={`Dependencia ${dependencySource.nombre} → ${task.nombre}`}
+          className="sr-only"
+        />
+      )
+    }
   })
 
   // ── Render ──────────────────────────────────────────────────────

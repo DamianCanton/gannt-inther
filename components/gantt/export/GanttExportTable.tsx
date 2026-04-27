@@ -8,7 +8,9 @@ export interface GanttExportTableProps {
   monthGroups: { monthName: string; count: number }[]
   tasks: ScheduleTask[]
   getTaskRange: (task: ScheduleTask) => { startIndex: number; span: number }
-  taskColumnWidth: number
+  taskNameColumnWidth: number
+  durationColumnWidth: number
+  timeColumnWidth: number
 }
 
 function formatDailyLabel(columnKey: string, fallback: string): string {
@@ -28,7 +30,9 @@ export function GanttExportTable({
   monthGroups,
   tasks,
   getTaskRange,
-  taskColumnWidth,
+  taskNameColumnWidth,
+  durationColumnWidth,
+  timeColumnWidth,
 }: GanttExportTableProps) {
   if (tasks.length === 0) {
     return <div className="print-empty">No hay tareas imprimibles para esta obra.</div>
@@ -37,19 +41,23 @@ export function GanttExportTable({
   return (
     <table className="print-gantt-table">
       <colgroup>
-        <col style={{ width: 260 }} />
-        <col style={{ width: 70 }} />
+        <col style={{ width: taskNameColumnWidth }} />
+        <col style={{ width: durationColumnWidth }} />
         {columns.map((column) => (
-          <col key={`cg-${column.key}`} style={{ width: taskColumnWidth }} />
+          <col key={`cg-${column.key}`} style={{ width: timeColumnWidth }} />
         ))}
       </colgroup>
       <thead>
         {scaleMode === 'daily' ? (
           <tr>
-            <th className="print-gantt-table__task-header" rowSpan={2}>
+            <th
+              className="print-gantt-table__task-header"
+              rowSpan={2}
+              style={{ width: taskNameColumnWidth, minWidth: taskNameColumnWidth, maxWidth: taskNameColumnWidth }}
+            >
               Tarea
             </th>
-            <th className="print-gantt-table__dur-header" rowSpan={2}>
+            <th className="print-gantt-table__dur-header" rowSpan={2} style={{ width: durationColumnWidth, minWidth: durationColumnWidth }}>
               Días
             </th>
             {monthGroups.map((monthGroup, index) => (
@@ -66,8 +74,15 @@ export function GanttExportTable({
         <tr>
           {scaleMode !== 'daily' ? (
             <>
-              <th className="print-gantt-table__task-header">Tarea</th>
-              <th className="print-gantt-table__dur-header">Días</th>
+              <th
+                className="print-gantt-table__task-header"
+                style={{ width: taskNameColumnWidth, minWidth: taskNameColumnWidth, maxWidth: taskNameColumnWidth }}
+              >
+                Tarea
+              </th>
+              <th className="print-gantt-table__dur-header" style={{ width: durationColumnWidth, minWidth: durationColumnWidth }}>
+                Días
+              </th>
             </>
           ) : null}
           {columns.map((column) => (
@@ -83,7 +98,12 @@ export function GanttExportTable({
 
           return (
             <tr key={task.id} className="print-row">
-              <td className="print-gantt-table__task-name">{task.nombre}</td>
+              <td
+                className="print-gantt-table__task-name"
+                style={{ width: taskNameColumnWidth, minWidth: taskNameColumnWidth, maxWidth: taskNameColumnWidth }}
+              >
+                {task.nombre}
+              </td>
               <td className="print-gantt-table__task-dur">{task.duracionDias}</td>
               {columns.map((column, columnIndex) => {
                 const isInRange =

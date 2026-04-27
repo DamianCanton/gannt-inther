@@ -12,6 +12,7 @@ export interface PrintClientControlsProps {
 
 const DEFAULT_READY_SELECTOR = '[data-export-surface="true"]'
 const EXPORT_MARGIN_PX = 40
+const AUTO_PDF_RIGHT_MARGIN_PX = 32
 
 function sanitizeFilenameSegment(value: string): string {
   return value
@@ -60,8 +61,11 @@ export function PrintClientControls({
           node: exportNode,
           filename: `${safeFilename}.pdf`,
           mode: 'dynamic',
-          pixelRatio: 2,
-          marginPx: EXPORT_MARGIN_PX,
+          pixelRatio: 2.5,
+          marginPx: 0,
+          marginsPx: {
+            right: AUTO_PDF_RIGHT_MARGIN_PX,
+          },
         })
       }
 
@@ -108,8 +112,11 @@ export function PrintClientControls({
           {isMenuOpen ? (
             <div
               id="print-export-menu"
-              className="absolute right-0 top-12 z-20 w-72 rounded-xl border border-slate-200 bg-white p-2 shadow-xl"
+              className="absolute right-0 top-12 z-20 w-80 rounded-xl border border-slate-200 bg-white p-2 shadow-xl"
             >
+              <p className="px-3 pb-2 text-xs text-slate-500">
+                Usá PDF automático para diagramas largos. A4 puede reducir legibilidad.
+              </p>
               <button
                 type="button"
                 onClick={() => runExport('png')}
@@ -127,9 +134,14 @@ export function PrintClientControls({
               <button
                 type="button"
                 onClick={() => runExport('pdf-dynamic')}
-                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                className="flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
               >
-                <FileDown size={15} /> PDF tamaño automático
+                <span className="inline-flex items-center gap-2">
+                  <FileDown size={15} /> PDF tamaño automático
+                </span>
+                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+                  Recomendado
+                </span>
               </button>
               <button
                 type="button"

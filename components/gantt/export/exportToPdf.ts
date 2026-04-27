@@ -9,6 +9,12 @@ interface ExportToPdfOptions {
   mode: PdfMode
   pixelRatio?: number
   marginPx?: number
+  marginsPx?: {
+    top?: number
+    right?: number
+    bottom?: number
+    left?: number
+  }
 }
 
 const PX_TO_PT = 72 / 96
@@ -16,17 +22,38 @@ const A4_LANDSCAPE_WIDTH_PT = 841.89
 const A4_LANDSCAPE_HEIGHT_PT = 595.28
 const DEFAULT_EXPORT_MARGIN_PX = 32
 
+function resolveCaptureDimension(datasetValue: string | undefined, offsetValue: number, scrollValue: number): number {
+  const datasetNumber = Number(datasetValue)
+  const hasDatasetNumber = Number.isFinite(datasetNumber) && datasetNumber > 0
+  const measured = hasDatasetNumber ? Math.max(datasetNumber, offsetValue, scrollValue) : Math.max(offsetValue, scrollValue)
+
+  return Math.ceil(measured)
+}
+
 export async function exportToPdf({
   node,
   filename,
   mode,
   pixelRatio = 2,
   marginPx = DEFAULT_EXPORT_MARGIN_PX,
+  marginsPx,
 }: ExportToPdfOptions): Promise<{ warned: boolean }> {
-  const measuredWidthPx = Number(node.dataset.exportWidth || node.offsetWidth)
-  const measuredHeightPx = Number(node.dataset.exportHeight || node.offsetHeight)
-  const pageContentWidthPx = measuredWidthPx + marginPx * 2
-  const pageContentHeightPx = measuredHeightPx + marginPx * 2
+  const marginTopPx = marginsPx?.top ?? marginPx
+  const marginRightPx = marginsPx?.right ?? marginPx
+  const marginBottomPx = marginsPx?.bottom ?? marginPx
+  const marginLeftPx = marginsPx?.left ?? marginPx
+
+  const measuredWidthPx = resolveCaptureDimension(node.dataset.exportWidth, node.offsetWidth, node.scrollWidth)
+  const measuredHeightPx = resolveCaptureDimension(node.dataset.exportHeight, node.offsetHeight, node.scrollHeight)
+  const pageContentWidthPx = measuredWidthPx + marginLeftPx + marginRightPx
+  const pageContentHeightPx = measuredHeightPx + marginTopPx + marginBottomPx
+  const captureStyle =
+    marginTopPx > 0 || marginLeftPx > 0
+      ? {
+          transform: `translate(${marginLeftPx}px, ${marginTopPx}px)`,
+          transformOrigin: 'top left' as const,
+        }
+      : undefined
 
   const dataUrl = await toPng(node, {
     pixelRatio,
@@ -34,10 +61,7 @@ export async function exportToPdf({
     backgroundColor: '#ffffff',
     width: pageContentWidthPx,
     height: pageContentHeightPx,
-    style: {
-      transform: `translate(${marginPx}px, ${marginPx}px)`,
-      transformOrigin: 'top left',
-    },
+    style: captureStyle,
   })
 
   if (mode === 'a4-landscape') {

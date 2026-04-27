@@ -1,4 +1,4 @@
-import type { PrintConfig, ScheduleTask, Uuid } from '@/types/gantt'
+import type { PrintConfig, ScheduleTask, TimelineViewMode, Uuid } from '@/types/gantt'
 
 export const DEFAULT_PRINT_CONFIG: PrintConfig = {
   selectionMode: 'visible',
@@ -7,6 +7,8 @@ export const DEFAULT_PRINT_CONFIG: PrintConfig = {
   visibleTaskIds: [],
   manualTaskIds: [],
 }
+
+const VALID_VIEW_MODES: ReadonlySet<TimelineViewMode> = new Set(['daily', 'weekly', 'monthly'])
 
 function isUuidArray(value: unknown): value is Uuid[] {
   return Array.isArray(value) && value.every((entry) => typeof entry === 'string')
@@ -25,6 +27,9 @@ function normalizePrintConfig(value: unknown): PrintConfig {
     expandAllBeforePrint: raw.expandAllBeforePrint === true,
     visibleTaskIds: isUuidArray(raw.visibleTaskIds) ? raw.visibleTaskIds : [],
     manualTaskIds: isUuidArray(raw.manualTaskIds) ? raw.manualTaskIds : [],
+    viewMode: typeof raw.viewMode === 'string' && VALID_VIEW_MODES.has(raw.viewMode as TimelineViewMode)
+      ? (raw.viewMode as TimelineViewMode)
+      : undefined,
   }
 }
 

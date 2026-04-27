@@ -75,6 +75,21 @@ export interface ObraSchedule {
 }
 
 export type PrintSelectionMode = 'visible' | 'manual';
+export type TimelineViewMode = 'daily' | 'weekly' | 'monthly';
+
+export type GanttDependencyFilterMode = 'all' | 'with-dependencies' | 'without-dependencies';
+
+export type GanttVisibilityFilterMode = 'all' | 'visible-only';
+
+export interface GanttToolbarFilters {
+  query: string;
+  minDuration: string;
+  maxDuration: string;
+  dependencyMode: GanttDependencyFilterMode;
+  dateFrom: IsoDate | '';
+  dateTo: IsoDate | '';
+  visibility: GanttVisibilityFilterMode;
+}
 
 /**
  * Serializable print handoff contract passed from interactive UI to print route.
@@ -86,6 +101,7 @@ export interface PrintConfig {
   expandAllBeforePrint: boolean;
   visibleTaskIds: Uuid[];
   manualTaskIds: Uuid[];
+  viewMode?: TimelineViewMode;
 }
 
 export interface PrintTaskPayload {

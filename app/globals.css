@@ -63,6 +63,9 @@
 }
 
 .export-surface-wrap {
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
   overflow-x: auto;
   border: 1px solid #e2e8f0;
   border-radius: 16px;
@@ -271,7 +274,7 @@
 }
 
 .print-gantt-table__cell--weekend {
-  background: #f1f5f9; /* Subtle gray for weekends */
+  background: #e2e8f0; /* Stronger gray for non-working days */
 }
 
 /* ── Zebra rows ────────────────────────────────────────────── */

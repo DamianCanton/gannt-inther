@@ -60,7 +60,7 @@ export function GanttHeader({
             className="inline-flex h-12 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             <Plus size={16} />
-            + Nueva tarea
+            Nueva tarea
           </button>
           <button
             type="button"
