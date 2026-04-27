@@ -96,11 +96,11 @@ export function ObraListClient({ initialObras, createAction }: ObraListClientPro
   }, [router])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       {/* Toolbar: Search + Create Button */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         {/* Search */}
-        <div className="relative max-w-sm flex-1">
+        <div className="relative w-full max-w-xl">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none"
             strokeWidth={2}
@@ -111,21 +111,20 @@ export function ObraListClient({ initialObras, createAction }: ObraListClientPro
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             aria-label="Buscar obras"
-            className="pl-9 border-gray-200/80 bg-white shadow-xs focus-visible:ring-primary/30 focus-visible:border-primary/50 text-[13px]"
+            className="h-11 rounded-xl border-slate-200 bg-white pl-9 text-[14px] shadow-sm focus-visible:border-blue-400 focus-visible:ring-blue-300/40"
           />
         </div>
 
         {/* Create Button + Count */}
-        <div className="flex items-center gap-3">
-          {filteredObras.length > 0 && (
-            <span className="text-[12px] text-gray-400 font-medium tabular-nums tracking-wide">
-              {filteredObras.length} {filteredObras.length === 1 ? 'obra' : 'obras'}
-            </span>
-          )}
+        <div className="flex items-center gap-4">
+          <span className="text-[14px] text-slate-500 font-medium tabular-nums tracking-wide">
+            {filteredObras.length} {filteredObras.length === 1 ? 'obra' : 'obras'}
+          </span>
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-[13px] font-medium text-white shadow-xs hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+            className="inline-flex h-11 items-center gap-2 rounded-xl bg-blue-600 px-5 text-[14px] font-medium text-white shadow-[0_10px_24px_-14px_rgba(37,99,235,1)] transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-2"
+            aria-label="Crear diagrama nuevo"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
             Crear diagrama nuevo
@@ -135,7 +134,7 @@ export function ObraListClient({ initialObras, createAction }: ObraListClientPro
 
       {/* Results — Grilla como protagonista */}
       {filteredObras.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/50 p-16 text-center">
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-16 text-center shadow-sm">
           {searchTerm ? (
             <div className="space-y-2">
               <Search className="mx-auto h-8 w-8 text-gray-300" strokeWidth={1.5} />
@@ -164,7 +163,7 @@ export function ObraListClient({ initialObras, createAction }: ObraListClientPro
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {filteredObras.map((obra) => (
             <ObraCard
               key={obra.id}
@@ -181,7 +180,7 @@ export function ObraListClient({ initialObras, createAction }: ObraListClientPro
         open={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         title="Crear diagrama nuevo"
-        className="max-w-xl"
+        className="max-w-2xl rounded-[28px] border-slate-200 shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)]"
       >
         <CreateObraForm
           action={createAction}

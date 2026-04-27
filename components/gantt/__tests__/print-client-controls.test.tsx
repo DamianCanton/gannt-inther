@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { PrintClientControls } from '@/components/gantt/print-client-controls'
@@ -11,34 +11,34 @@ describe('PrintClientControls', () => {
     vi.restoreAllMocks()
   })
 
-  it('auto-triggers print once when target is render-ready', async () => {
+  it('does not auto-trigger native print when target is render-ready', () => {
     const printSpy = vi.spyOn(window, 'print').mockImplementation(() => undefined)
 
-    document.body.innerHTML = '<table class="print-gantt-table"></table>'
+    document.body.innerHTML = '<div data-export-surface="true"></div>'
 
-    render(<PrintClientControls autoPrintTimeoutMs={1000} />)
+    render(<PrintClientControls />)
 
-    await waitFor(() => {
-      expect(printSpy).toHaveBeenCalledTimes(1)
-    })
+    expect(printSpy).not.toHaveBeenCalled()
+    expect(screen.getByText(/El PDF ya no depende de la impresión del navegador/)).toBeTruthy()
   })
 
-  it('shows manual fallback action when timeout elapses', async () => {
+  it('shows native print as a compatibility action inside the export menu', () => {
     vi.spyOn(window, 'print').mockImplementation(() => undefined)
 
-    render(<PrintClientControls autoPrintTimeoutMs={20} readySelector=".not-rendered" />)
+    render(<PrintClientControls readySelector=".not-rendered" />)
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Imprimir ahora' })).toBeTruthy()
-    })
+    fireEvent.click(screen.getByRole('button', { name: /Exportar/ }))
+
+    expect(screen.getByRole('button', { name: 'Impresión nativa (compatibilidad)' })).toBeTruthy()
   })
 
-  it('invokes window.print when manual fallback button is clicked', async () => {
+  it('invokes window.print only from the native compatibility menu action', () => {
     const printSpy = vi.spyOn(window, 'print').mockImplementation(() => undefined)
 
-    render(<PrintClientControls autoPrintTimeoutMs={20} readySelector=".not-rendered" />)
+    render(<PrintClientControls readySelector=".not-rendered" />)
 
-    const manualPrintButton = await screen.findByRole('button', { name: 'Imprimir ahora' })
+    fireEvent.click(screen.getByRole('button', { name: /Exportar/ }))
+    const manualPrintButton = screen.getByRole('button', { name: 'Impresión nativa (compatibilidad)' })
     fireEvent.click(manualPrintButton)
 
     expect(printSpy).toHaveBeenCalledTimes(1)

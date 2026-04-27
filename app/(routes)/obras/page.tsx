@@ -26,14 +26,14 @@ export default async function ObrasPage() {
     const obras = await repo.listObras(auth.projectId)
 
     return (
-      <div className="min-h-screen bg-gray-50/30">
-        <div className="mx-auto max-w-6xl px-6 py-10 lg:px-8">
+      <div className="min-h-screen bg-slate-50/70">
+        <div className="py-3 md:py-4">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-xl font-semibold tracking-tight text-gray-900">
+            <h1 className="text-[40px] font-semibold tracking-tight text-slate-900">
               Obras
             </h1>
-            <p className="mt-1 text-[13px] text-gray-500">
+            <p className="mt-2 text-[16px] text-slate-500">
               Gestioná tus obras de construcción y sus cronogramas.
             </p>
           </div>
@@ -52,10 +52,10 @@ export default async function ObrasPage() {
 
     if (error instanceof AuthContextError && error.code === 'NO_PROJECT_MEMBERSHIP') {
       return (
-        <div className="min-h-screen bg-gray-50/30">
-          <div className="mx-auto max-w-6xl px-6 py-10 lg:px-8">
+        <div className="min-h-screen bg-slate-50/70">
+          <div className="py-3 md:py-4">
             <div className="mb-8">
-              <h1 className="text-xl font-semibold tracking-tight text-gray-900">
+              <h1 className="text-[40px] font-semibold tracking-tight text-slate-900">
                 Obras
               </h1>
             </div>

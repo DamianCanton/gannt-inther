@@ -7,6 +7,7 @@ import { Sidebar, SidebarToggle } from './sidebar';
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isGanttWorkspace = pathname?.startsWith('/obra/') || pathname?.startsWith('/preview/obra/')
 
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
@@ -19,8 +20,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-screen bg-background text-text">
       <SidebarToggle onClick={() => setSidebarOpen(true)} />
       <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
-      <main className="flex-1 p-8 pt-16 md:pt-8 md:ml-64 overflow-y-auto">
-        <div className="max-w-6xl mx-auto">{children}</div>
+      <main className={`flex-1 overflow-y-auto pt-16 md:ml-64 md:pt-6 ${isGanttWorkspace ? 'p-4 md:p-6' : 'p-8'}`}>
+        <div className={isGanttWorkspace ? 'mx-auto max-w-[1400px]' : 'mx-auto max-w-6xl'}>{children}</div>
       </main>
     </div>
   );

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, HardHat, User, LogOut, ArrowLeft, Menu, X } from 'lucide-react';
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 const links = [
   { href: '/obras', label: 'Obras', icon: Home },
@@ -19,6 +19,15 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const prevPathnameRef = useRef(pathname);
+
+  const isLinkActive = useCallback((href: string) => {
+    if (!pathname) return false;
+    if (href === '/obras') {
+      return pathname.startsWith('/obras') || pathname.startsWith('/obra/');
+    }
+
+    return pathname.startsWith(href);
+  }, [pathname]);
 
   // Close drawer on route change (mobile) — skip initial mount
   useEffect(() => {
@@ -40,7 +49,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-primary text-white flex flex-col shadow-xl transition-transform duration-200 ease-in-out md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-gradient-to-b from-[#0a2a58] via-[#0a2550] to-[#081e44] text-white flex flex-col shadow-xl transition-transform duration-200 ease-in-out md:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         aria-label="Panel de navegación"
@@ -50,7 +59,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <h1 className="text-2xl font-bold tracking-tight">
               INTHER<span className="text-accent">S.R.L.</span>
             </h1>
-            <p className="text-xs text-white/70 uppercase tracking-wider mt-1">Gestión de Obras</p>
+            <p className="text-xs text-white/70 uppercase tracking-wider mt-1">GESTIÓN DE OBRAS</p>
           </div>
           <button
             onClick={onClose}
@@ -64,7 +73,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto" aria-label="Navegación principal">
           {links.map((link) => {
             const Icon = link.icon;
-            const isActive = pathname?.startsWith(link.href);
+            const isActive = isLinkActive(link.href);
 
             return (
               <Link
@@ -73,7 +82,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 aria-current={isActive ? 'page' : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none ${
                   isActive
-                    ? 'bg-accent text-white font-medium shadow-sm'
+                    ? 'bg-gradient-to-r from-[#ff9f1f] to-[#ff9a1a] text-white font-medium shadow-[0_8px_22px_-16px_rgba(255,159,31,0.95)]'
                     : 'text-white/80 hover:bg-white/10 hover:text-white'
                 }`}
               >

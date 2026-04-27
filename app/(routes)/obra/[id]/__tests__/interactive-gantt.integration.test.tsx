@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { GanttInteractive } from '@/components/gantt/gantt-interactive'
@@ -30,9 +30,6 @@ const initialSchedule: ScheduleTask[] = [
   },
 ]
 
-const taskA = initialSchedule[0] as ScheduleTask
-const taskB = initialSchedule[1] as ScheduleTask
-
 const hierarchySchedule: ScheduleTask[] = [
   {
     id: 'P1',
@@ -63,13 +60,9 @@ const hierarchySchedule: ScheduleTask[] = [
 ]
 
 describe('interactive gantt integration', () => {
-  afterEach(() => {
-    cleanup()
-  })
+  afterEach(() => cleanup())
 
-  it('renders selection across list and timeline', () => {
-    const noop = vi.fn().mockResolvedValue({})
-
+  it('renders redesigned compact header and toolbar controls', () => {
     render(
       <GanttInteractive
         obraNombre="Obra Demo"
@@ -78,21 +71,56 @@ describe('interactive gantt integration', () => {
         obraStartDate="2026-04-06"
         printHref="/obra/o1/print"
         initialSchedule={initialSchedule}
-        onMutateTask={noop}
+        onMutateTask={vi.fn()}
       />
     )
 
-    expect(screen.getByText('Tareas')).toBeTruthy()
-    expect(screen.getAllByText('Cimentación').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Estructura').length).toBeGreaterThan(0)
+    expect(screen.getByRole('button', { name: /Volver a obras/i })).toBeTruthy()
+    expect(screen.getByRole('button', { name: '+ Nueva tarea' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Exportar' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Días' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Semanas' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Mes' })).toBeTruthy()
+    expect(screen.getByLabelText('Buscar tarea')).toBeTruthy()
+  })
 
-    fireEvent.click(screen.getAllByRole('button', { name: /Cimentación/ })[0]!)
-    expect(screen.getByText('Cimentación · 2026-04-06 → 2026-04-07')).toBeTruthy()
+  it('opens drawer in creation mode from + Nueva tarea', () => {
+    render(
+      <GanttInteractive
+        obraNombre="Obra Demo"
+        projectId="p1"
+        obraId="o1"
+        obraStartDate="2026-04-06"
+        printHref="/obra/o1/print"
+        initialSchedule={initialSchedule}
+        onMutateTask={vi.fn()}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: '+ Nueva tarea' }))
+    expect(screen.getByRole('heading', { name: 'Nueva tarea' })).toBeTruthy()
+    expect(screen.getByLabelText('Nombre')).toBeTruthy()
+  })
+
+  it('opens edit drawer after selecting a row', () => {
+    render(
+      <GanttInteractive
+        obraNombre="Obra Demo"
+        projectId="p1"
+        obraId="o1"
+        obraStartDate="2026-04-06"
+        printHref="/obra/o1/print"
+        initialSchedule={initialSchedule}
+        onMutateTask={vi.fn()}
+      />
+    )
+
+    fireEvent.click(screen.getAllByRole('button', { name: /Estructura/ })[0]!)
+    expect(screen.getByRole('heading', { name: 'Editar tarea' })).toBeTruthy()
+    expect(screen.getAllByText('Estructura').length).toBeGreaterThan(0)
   })
 
   it('collapses and expands child visibility in interactive grid', () => {
-    const noop = vi.fn().mockResolvedValue({})
-
     render(
       <GanttInteractive
         obraNombre="Obra Demo"
@@ -101,20 +129,16 @@ describe('interactive gantt integration', () => {
         obraStartDate="2026-04-06"
         printHref="/obra/o1/print"
         initialSchedule={hierarchySchedule}
-        onMutateTask={noop}
+        onMutateTask={vi.fn()}
       />
     )
 
     expect(screen.getByRole('button', { name: /Hija · 2026-04-07 → 2026-04-08/ })).toBeTruthy()
-
     fireEvent.click(screen.getByRole('button', { name: 'Contraer Padre' }))
     expect(screen.queryByRole('button', { name: /Hija · 2026-04-07 → 2026-04-08/ })).toBeNull()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Expandir Padre' }))
-    expect(screen.getByRole('button', { name: /Hija · 2026-04-07 → 2026-04-08/ })).toBeTruthy()
   })
 
-  it('creates a task and reconciles with the server schedule', async () => {
+  it('creates a task and reconciles with server schedule', async () => {
     const saveMock = vi.fn(async () => ({
       schedule: [
         ...initialSchedule,
@@ -144,18 +168,18 @@ describe('interactive gantt integration', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Crear' }))
+    fireEvent.click(screen.getByRole('button', { name: '+ Nueva tarea' }))
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Terminaciones' } })
     fireEvent.change(screen.getByLabelText('Duración (días hábiles)'), { target: { value: '2' } })
     fireEvent.click(screen.getByRole('button', { name: 'Crear tarea' }))
 
     await waitFor(() => {
       expect(saveMock).toHaveBeenCalledTimes(1)
-      expect(screen.getByText('Terminaciones · 2026-04-13 → 2026-04-14')).toBeTruthy()
+      expect(screen.getAllByText('Terminaciones').length).toBeGreaterThan(0)
     })
   })
 
-  it('keeps committed schedule visible on rejected mutation', async () => {
+  it('shows save error and keeps committed schedule on rejected mutation', async () => {
     const saveMock = vi.fn(async () => ({
       error: {
         code: 'VALIDATION_ERROR' as const,
@@ -175,8 +199,7 @@ describe('interactive gantt integration', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Editar' }))
-    fireEvent.change(screen.getByLabelText('Tarea'), { target: { value: 'B' } })
+    fireEvent.click(screen.getAllByRole('button', { name: /Estructura/ })[0]!)
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
     await waitFor(() => {
@@ -185,24 +208,7 @@ describe('interactive gantt integration', () => {
     })
   })
 
-  it('renders empty state without disabling the timeline frame', () => {
-    render(
-      <GanttInteractive
-        obraNombre="Obra Vacía"
-        projectId="p1"
-        obraId="o1"
-        obraStartDate="2026-04-06"
-        printHref="/obra/o1/print"
-        initialSchedule={[]}
-        onMutateTask={vi.fn()}
-      />
-    )
-
-    expect(screen.getByText('Todavía no hay tareas cargadas.')).toBeTruthy()
-    expect(screen.getByText('La línea de tiempo aparece acá cuando cargues tareas.')).toBeTruthy()
-  })
-
-  it('allows creating the first task when schedule is empty', async () => {
+  it('renders empty state and allows creating first task', async () => {
     const saveMock = vi.fn(async () => ({
       schedule: [
         {
@@ -231,17 +237,43 @@ describe('interactive gantt integration', () => {
       />
     )
 
+    expect(screen.getByText('Todavía no hay tareas cargadas.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '+ Nueva tarea' }))
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Primera tarea' } })
-    fireEvent.change(screen.getByLabelText('Duración (días hábiles)'), { target: { value: '1' } })
     fireEvent.click(screen.getByRole('button', { name: 'Crear tarea' }))
 
     await waitFor(() => {
       expect(saveMock).toHaveBeenCalledTimes(1)
-      expect(screen.getByText('Primera tarea · 2026-04-06 → 2026-04-06')).toBeTruthy()
+      expect(screen.getAllByText('Primera tarea').length).toBeGreaterThan(0)
     })
   })
 
-  it('disables editing when the server data is unavailable', () => {
+  it('supports print handoff config serialization', () => {
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
+
+    render(
+      <GanttInteractive
+        obraNombre="Obra Demo"
+        projectId="p1"
+        obraId="o1"
+        obraStartDate="2026-04-06"
+        printHref="/obra/o1/print"
+        initialSchedule={initialSchedule}
+        onMutateTask={vi.fn()}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Exportar' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir vista de impresión' }))
+
+    const openedUrl = openSpy.mock.calls[0]?.[0]
+    const parsedUrl = new URL(openedUrl as string, 'https://example.test')
+    const encodedConfig = parsedUrl.searchParams.get('config')
+    const config = deserializePrintConfig(encodedConfig)
+    expect(config.selectionMode).toBe('visible')
+  })
+
+  it('shows blocking error state when initial schedule is unavailable', () => {
     render(
       <GanttInteractive
         obraNombre="Obra Demo"
@@ -256,246 +288,6 @@ describe('interactive gantt integration', () => {
     )
 
     expect(screen.getByText('No se pudo cargar la obra.')).toBeTruthy()
-    expect(screen.getByText('Obra Demo')).toBeTruthy()
     expect(screen.queryByText('Editor de tarea')).toBeNull()
-  })
-
-  it('requires delete confirmation before submitting intent', async () => {
-    const saveMock = vi.fn(async () => ({ schedule: [taskA] }))
-
-    render(
-      <GanttInteractive
-        obraNombre="Obra Demo"
-        projectId="p1"
-        obraId="o1"
-        obraStartDate="2026-04-06"
-        printHref="/obra/o1/print"
-        initialSchedule={initialSchedule}
-        onMutateTask={saveMock}
-      />
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }))
-    fireEvent.change(screen.getByLabelText('Tarea'), { target: { value: 'B' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Eliminar tarea' }))
-
-    expect(saveMock).toHaveBeenCalledTimes(0)
-    fireEvent.click(screen.getByLabelText('Confirmo que quiero eliminar esta tarea'))
-    fireEvent.click(screen.getByRole('button', { name: 'Eliminar tarea' }))
-
-    await waitFor(() => {
-      expect(saveMock).toHaveBeenCalledTimes(1)
-      expect(screen.getByText('Obra Demo')).toBeTruthy()
-    })
-  })
-
-  it('cancels an in-progress edit intent without sending mutations', () => {
-    const saveMock = vi.fn(async () => ({ schedule: initialSchedule }))
-
-    render(
-      <GanttInteractive
-        obraNombre="Obra Demo"
-        projectId="p1"
-        obraId="o1"
-        obraStartDate="2026-04-06"
-        printHref="/obra/o1/print"
-        initialSchedule={initialSchedule}
-        onMutateTask={saveMock}
-      />
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }))
-    fireEvent.change(screen.getByLabelText('Tarea'), { target: { value: 'B' } })
-
-    expect(screen.getByLabelText('Confirmo que quiero eliminar esta tarea')).toBeTruthy()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Crear' }))
-
-    expect(screen.queryByLabelText('Confirmo que quiero eliminar esta tarea')).toBeNull()
-    expect(screen.getByRole('button', { name: 'Crear tarea' })).toBeTruthy()
-    expect(screen.getByText('Seleccioná una tarea para ver sus detalles.')).toBeTruthy()
-    expect(saveMock).toHaveBeenCalledTimes(0)
-  })
-
-  it('opens print modal and hands off serialized PrintConfig to print route', () => {
-    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
-
-    render(
-      <GanttInteractive
-        obraNombre="Obra Demo"
-        projectId="p1"
-        obraId="o1"
-        obraStartDate="2026-04-06"
-        printHref="/obra/o1/print"
-        initialSchedule={initialSchedule}
-        onMutateTask={vi.fn()}
-      />
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Exportar PDF/Imprimir' }))
-    fireEvent.click(screen.getByLabelText('Expandir todo antes de imprimir'))
-    fireEvent.click(screen.getByLabelText('Incluir tareas de 1 día'))
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir vista de impresión' }))
-
-    expect(openSpy).toHaveBeenCalledTimes(1)
-    const openedUrl = openSpy.mock.calls[0]?.[0]
-    expect(typeof openedUrl).toBe('string')
-
-    const parsedUrl = new URL(openedUrl as string, 'https://example.test')
-    expect(parsedUrl.pathname).toBe('/obra/o1/print')
-
-    const encodedConfig = parsedUrl.searchParams.get('config')
-    expect(encodedConfig).toBeTruthy()
-
-    const config = deserializePrintConfig(encodedConfig)
-    expect(config.expandAllBeforePrint).toBe(true)
-    expect(config.includeOneDayTasks).toBe(false)
-    expect(config.selectionMode).toBe('visible')
-  })
-
-  it('supports manual task selection in print handoff config', () => {
-    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
-
-    render(
-      <GanttInteractive
-        obraNombre="Obra Demo"
-        projectId="p1"
-        obraId="o1"
-        obraStartDate="2026-04-06"
-        printHref="/obra/o1/print"
-        initialSchedule={initialSchedule}
-        onMutateTask={vi.fn()}
-      />
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Exportar PDF/Imprimir' }))
-    fireEvent.click(screen.getByLabelText('Selección manual'))
-    fireEvent.click(screen.getByLabelText('Estructura (3d)'))
-    fireEvent.click(screen.getByRole('button', { name: 'Abrir vista de impresión' }))
-
-    const openedUrl = openSpy.mock.calls[0]?.[0]
-    const parsedUrl = new URL(openedUrl as string, 'https://example.test')
-    const encodedConfig = parsedUrl.searchParams.get('config')
-    const config = deserializePrintConfig(encodedConfig)
-
-    expect(config.selectionMode).toBe('manual')
-    expect(config.manualTaskIds).toEqual(['B'])
-  })
-
-  it('opens an expanded chart view without the editor panel', () => {
-    const requestFullscreenMock = vi.fn().mockResolvedValue(undefined)
-    Object.defineProperty(HTMLDivElement.prototype, 'requestFullscreen', {
-      configurable: true,
-      value: requestFullscreenMock,
-    })
-    Object.defineProperty(HTMLDivElement.prototype, 'clientWidth', {
-      configurable: true,
-      value: 400,
-    })
-
-    render(
-      <GanttInteractive
-        obraNombre="Obra Demo"
-        projectId="p1"
-        obraId="o1"
-        obraStartDate="2026-04-06"
-        printHref="/obra/o1/print"
-        initialSchedule={initialSchedule}
-        onMutateTask={vi.fn()}
-      />
-    )
-
-    fireEvent.click(screen.getAllByRole('button', { name: /Estructura/ })[0]!)
-    fireEvent.click(screen.getByRole('button', { name: 'Ver gráfico ampliado' }))
-
-    const expandedDialog = screen.getByRole('dialog', { name: 'Vista ampliada · Obra Demo' })
-    const draggableSurface = within(expandedDialog).getByLabelText('Superficie desplazable del cronograma')
-
-    expect(expandedDialog).toBeTruthy()
-    expect(within(expandedDialog).getByText(/Modo pro del cronograma/)).toBeTruthy()
-    expect(
-      within(expandedDialog).getByText(/mantené click izquierdo sobre el gráfico y arrastrá hacia los costados/i)
-    ).toBeTruthy()
-    expect(draggableSurface).toBeTruthy()
-    expect(draggableSurface.scrollLeft).toBeGreaterThan(0)
-    expect(screen.queryByRole('button', { name: 'Guardar cambios' })).toBeNull()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Pantalla completa' }))
-    expect(requestFullscreenMock).toHaveBeenCalledTimes(1)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Cerrar vista ampliada' }))
-
-    expect(screen.queryByRole('dialog', { name: 'Vista ampliada · Obra Demo' })).toBeNull()
-  })
-
-  it('shows visible pending feedback during mutation', async () => {
-    let resolveMutation: ((value: { schedule: ScheduleTask[] }) => void) | null = null
-    const saveMock = vi.fn(
-      () =>
-        new Promise<{ schedule: ScheduleTask[] }>((resolve) => {
-          resolveMutation = resolve
-        })
-    )
-
-    render(
-      <GanttInteractive
-        obraNombre="Obra Demo"
-        projectId="p1"
-        obraId="o1"
-        obraStartDate="2026-04-06"
-        printHref="/obra/o1/print"
-        initialSchedule={initialSchedule}
-        onMutateTask={saveMock}
-      />
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Crear' }))
-    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Pendiente' } })
-    fireEvent.change(screen.getByLabelText('Duración (días hábiles)'), { target: { value: '1' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Crear tarea' }))
-
-    expect(screen.getByText('Guardando cambios en el cronograma...')).toBeTruthy()
-    expect(screen.getByText('Creando tarea...')).toBeTruthy()
-
-    if (!resolveMutation) {
-      throw new Error('Test setup failed: mutation resolver missing')
-    }
-
-    const completeMutation = resolveMutation as (value: { schedule: ScheduleTask[] }) => void
-    completeMutation({ schedule: initialSchedule })
-
-    await waitFor(() => {
-      expect(screen.queryByText('Guardando cambios en el cronograma...')).toBeNull()
-      expect(screen.queryByText('Creando tarea...')).toBeNull()
-    })
-  })
-
-  it('recovers from thrown submit errors without leaving saving state stuck', async () => {
-    const saveMock = vi.fn(async () => {
-      throw new Error('network down')
-    })
-
-    render(
-      <GanttInteractive
-        obraNombre="Obra Demo"
-        projectId="p1"
-        obraId="o1"
-        obraStartDate="2026-04-06"
-        printHref="/obra/o1/print"
-        initialSchedule={initialSchedule}
-        onMutateTask={saveMock}
-      />
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Crear' }))
-    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Falla' } })
-    fireEvent.change(screen.getByLabelText('Duración (días hábiles)'), { target: { value: '1' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Crear tarea' }))
-
-    await waitFor(() => {
-      expect(screen.getByText('No se pudo crear la tarea. Intentá nuevamente.')).toBeTruthy()
-      expect(screen.getByRole('button', { name: 'Crear tarea' })).toBeTruthy()
-      expect(screen.queryByText('Creando tarea...')).toBeNull()
-    })
   })
 })

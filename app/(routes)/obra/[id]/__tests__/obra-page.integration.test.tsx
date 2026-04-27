@@ -158,8 +158,7 @@ describe('/obra/[id] route integration', () => {
     render(page)
 
     expect(screen.getByText('Obra Autorizada')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Ver gráfico ampliado' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Exportar PDF/Imprimir' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Exportar' })).toBeTruthy()
     expect(ensureObraAccessMock).toHaveBeenCalledWith('o1')
     expect(notFoundMock).not.toHaveBeenCalled()
   })
