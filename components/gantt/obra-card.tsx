@@ -97,7 +97,7 @@ export function ObraCard({ obra, onDelete, disabled = false }: ObraCardProps) {
         <div className="space-y-2.5 pt-1">
           <Link
             href={`/obra/${obra.id}`}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-[14px] font-medium text-white shadow-[0_8px_20px_-14px_rgba(37,99,235,1)] transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-2"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-3 text-[14px] font-medium text-white shadow-[0_8px_20px_-14px_rgba(246,147,35,1)] transition-colors hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2"
             tabIndex={disabled ? -1 : undefined}
             aria-label={`Abrir diagrama de ${obra.nombre}`}
           >

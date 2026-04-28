@@ -54,7 +54,7 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in-0"
+        className="absolute inset-0 bg-gray-900/20 backdrop-blur-sm animate-in fade-in-0"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -67,13 +67,13 @@ export function Dialog({ open, onClose, title, children, className }: DialogProp
         aria-label={title}
         tabIndex={-1}
         className={cn(
-          'relative z-10 w-full max-w-lg rounded-xl border border-gray-200/80 bg-white shadow-xl animate-in fade-in-0 zoom-in-95',
+          'relative z-10 w-full max-w-lg rounded-xl border border-gray-200 bg-white shadow-xl animate-in fade-in-0 zoom-in-95',
           className
         )}
       >
         {title && (
           <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-            <h2 className="text-[15px] font-semibold tracking-tight text-gray-900">
+            <h2 className="text-[18px] font-semibold tracking-tight text-gray-900">
               {title}
             </h2>
             <button

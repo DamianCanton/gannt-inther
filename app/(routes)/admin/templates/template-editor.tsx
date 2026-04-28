@@ -1,12 +1,12 @@
 'use client'
 
-import React, { useCallback, useEffect, useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import type { TipoObra } from '@/types/gantt'
-
-// ─── Types ───────────────────────────────────────────────────────────────────
 
 interface TemplateTask {
   id: string
@@ -20,8 +20,6 @@ interface TemplateEditorProps {
   saveAction: (formData: FormData) => Promise<void>
   loadTasksAction: (tipoObra: TipoObra) => Promise<{ tasks: TemplateTask[] }>
 }
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function createEmptyTask(orden: number): TemplateTask {
   return {
@@ -40,15 +38,13 @@ function validateDraft(tasks: TemplateTask[]): string | null {
     if (!task.nombre.trim()) return `Tarea en posición ${task.orden + 1} sin nombre.`
     if (task.duracionDias < 1) return `Duración inválida en "${task.nombre}".`
     if (task.dependeDeTemplateId === task.id) return `"${task.nombre}" depende de sí misma.`
-    if (task.dependeDeTemplateId && !tasks.some((t) => t.id === task.dependeDeTemplateId)) {
+    if (task.dependeDeTemplateId && !tasks.some((candidate) => candidate.id === task.dependeDeTemplateId)) {
       return `"${task.nombre}" depende de una tarea inexistente.`
     }
   }
 
   return null
 }
-
-// ─── Component ───────────────────────────────────────────────────────────────
 
 export function TemplateEditor({ saveAction, loadTasksAction }: TemplateEditorProps) {
   const [selectedType, setSelectedType] = useState<TipoObra>('Tipo A')
@@ -58,7 +54,6 @@ export function TemplateEditor({ saveAction, loadTasksAction }: TemplateEditorPr
   const [isLoading, setIsLoading] = useState(false)
   const [hasLoaded, setHasLoaded] = useState(false)
 
-  // Hydrate editor when component mounts or tipo changes
   useEffect(() => {
     let cancelled = false
     setIsLoading(true)
@@ -82,44 +77,43 @@ export function TemplateEditor({ saveAction, loadTasksAction }: TemplateEditorPr
         if (!cancelled) setIsLoading(false)
       })
 
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [selectedType, loadTasksAction])
 
   const addTask = () => {
-    setTasks((prev) => [...prev, createEmptyTask(prev.length)])
+    setTasks((previous) => [...previous, createEmptyTask(previous.length)])
   }
 
   const removeTask = (id: string) => {
-    setTasks((prev) => {
-      const filtered = prev.filter((t) => t.id !== id)
-      return filtered.map((t, i) => ({
-        ...t,
-        orden: i,
-        dependeDeTemplateId: t.dependeDeTemplateId === id ? null : t.dependeDeTemplateId,
+    setTasks((previous) => {
+      const filtered = previous.filter((task) => task.id !== id)
+      return filtered.map((task, index) => ({
+        ...task,
+        orden: index,
+        dependeDeTemplateId: task.dependeDeTemplateId === id ? null : task.dependeDeTemplateId,
       }))
     })
   }
 
   const updateTask = (id: string, field: keyof TemplateTask, value: string | number | null) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, [field]: value } : t))
-    )
+    setTasks((previous) => previous.map((task) => (task.id === id ? { ...task, [field]: value } : task)))
   }
 
   const moveTask = (id: string, direction: 'up' | 'down') => {
-    setTasks((prev) => {
-      const idx = prev.findIndex((t) => t.id === id)
-      if (idx === -1) return prev
-      const targetIdx = direction === 'up' ? idx - 1 : idx + 1
-      if (targetIdx < 0 || targetIdx >= prev.length) return prev
+    setTasks((previous) => {
+      const index = previous.findIndex((task) => task.id === id)
+      if (index === -1) return previous
+      const targetIndex = direction === 'up' ? index - 1 : index + 1
+      if (targetIndex < 0 || targetIndex >= previous.length) return previous
 
-      const next = [...prev]
-      const removed = next.splice(idx, 1)
-      const moved = removed[0]
-      if (!moved) return prev
-      next.splice(targetIdx, 0, moved)
+      const next = [...previous]
+      const [moved] = next.splice(index, 1)
+      if (!moved) return previous
+      next.splice(targetIndex, 0, moved)
 
-      return next.map((t, i) => ({ ...t, orden: i }))
+      return next.map((task, nextIndex) => ({ ...task, orden: nextIndex }))
     })
   }
 
@@ -145,135 +139,130 @@ export function TemplateEditor({ saveAction, loadTasksAction }: TemplateEditorPr
 
   return (
     <div className="space-y-6">
-      {/* Type selector */}
-      <div className="flex gap-2">
-        {(['Tipo A', 'Tipo B', 'Tipo C'] as TipoObra[]).map((tipo) => (
-          <Button
-            key={tipo}
-            variant={selectedType === tipo ? 'primary' : 'secondary'}
-            onClick={() => handleTypeChange(tipo)}
-            disabled={isPending}
-          >
-            {tipo}
-          </Button>
-        ))}
-      </div>
-
-      {/* Status */}
-      {isLoading ? (
-        <Card className="bg-gray-50 border-gray-200">
-          <p className="text-sm text-gray-500">Cargando plantilla…</p>
-        </Card>
-      ) : hasLoaded ? (
-        <Card className="bg-green-50 border-green-200">
-          <p className="text-sm text-green-800">
-            Plantilla activa — {tasks.length} tarea{tasks.length !== 1 ? 's' : ''}.
-          </p>
-        </Card>
-      ) : (
-        <Card className="bg-gray-50 border-gray-200">
-          <p className="text-sm text-gray-600">
-            Sin plantilla para {selectedType}. Creá la primera.
-          </p>
-        </Card>
-      )}
-
-      {/* Validation error */}
-      {validationError && (
-        <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {validationError}
+      <Card className="space-y-4">
+        <div className="flex flex-wrap gap-2">
+          {(['Tipo A', 'Tipo B', 'Tipo C'] as TipoObra[]).map((tipo) => (
+            <Button
+              key={tipo}
+              variant={selectedType === tipo ? 'default' : 'secondary'}
+              onClick={() => handleTypeChange(tipo)}
+              disabled={isPending}
+            >
+              {tipo}
+            </Button>
+          ))}
         </div>
-      )}
 
-      {/* Task editor */}
+        {isLoading ? (
+          <div className="rounded-xl border border-gray-200 bg-gray-50/70 px-4 py-3 text-sm text-gray-500">
+            Cargando plantilla…
+          </div>
+        ) : hasLoaded ? (
+          <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            Plantilla activa — {tasks.length} tarea{tasks.length !== 1 ? 's' : ''}.
+          </div>
+        ) : (
+          <div className="rounded-xl border border-gray-200 bg-gray-50/70 px-4 py-3 text-sm text-gray-600">
+            Sin plantilla para {selectedType}. Creá la primera.
+          </div>
+        )}
+
+        {validationError ? (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {validationError}
+          </div>
+        ) : null}
+      </Card>
+
       <div className="space-y-3">
-        <h2 className="text-lg font-semibold">Tareas — {selectedType}</h2>
+        <h2 className="text-[18px] font-semibold tracking-tight text-slate-900">Tareas — {selectedType}</h2>
 
         {isLoading ? (
           <Card>
             <p className="text-sm text-gray-500">Cargando tareas…</p>
           </Card>
-        ) : tasks.map((task, index) => (
-          <Card key={task.id} className="space-y-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="text-sm font-mono text-gray-500 w-8">
-                {index + 1}.
-              </span>
+        ) : (
+          tasks.map((task, index) => (
+            <Card key={task.id} className="space-y-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="w-8 font-mono text-sm tabular-nums text-gray-500">{index + 1}.</span>
 
-              <input
-                className="flex-1 min-w-[200px] rounded border border-gray-300 px-3 py-2"
-                placeholder="Nombre de la tarea"
-                value={task.nombre}
-                onChange={(e) => updateTask(task.id, 'nombre', e.target.value)}
-              />
+                <div className="min-w-[200px] flex-1">
+                  <Input
+                    className="w-full"
+                    placeholder="Nombre de la tarea"
+                    value={task.nombre}
+                    onChange={(event) => updateTask(task.id, 'nombre', event.target.value)}
+                  />
+                </div>
 
-              <input
-                className="w-20 rounded border border-gray-300 px-3 py-2 text-center"
-                type="number"
-                min={1}
-                value={task.duracionDias}
-                onChange={(e) => updateTask(task.id, 'duracionDias', Number(e.target.value))}
-                title="Duración en días hábiles"
-              />
-              <span className="text-xs text-gray-500">días</span>
+                <div className="w-20">
+                  <Input
+                    className="w-full text-center"
+                    type="number"
+                    min={1}
+                    value={task.duracionDias}
+                    onChange={(event) => updateTask(task.id, 'duracionDias', Number(event.target.value))}
+                    title="Duración en días hábiles"
+                  />
+                </div>
+                <span className="text-xs text-gray-500">días</span>
 
-              <select
-                className="rounded border border-gray-300 px-3 py-2 min-w-[160px]"
-                value={task.dependeDeTemplateId ?? ''}
-                onChange={(e) =>
-                  updateTask(task.id, 'dependeDeTemplateId', e.target.value || null)
-                }
-              >
-                <option value="">Sin dependencia</option>
-                {tasks
-                  .filter((t) => t.id !== task.id)
-                  .map((t) => (
-                    <option key={t.id} value={t.id}>
-                      → {t.nombre || `Tarea ${t.orden + 1}`}
-                    </option>
-                  ))}
-              </select>
-
-              <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => moveTask(task.id, 'up')}
-                  disabled={index === 0}
-                  title="Mover arriba"
+                <Select
+                  className="min-w-[160px]"
+                  value={task.dependeDeTemplateId ?? ''}
+                  onChange={(event) => updateTask(task.id, 'dependeDeTemplateId', event.target.value || null)}
                 >
-                  ↑
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => moveTask(task.id, 'down')}
-                  disabled={index === tasks.length - 1}
-                  title="Mover abajo"
-                >
-                  ↓
-                </Button>
+                  <option value="">Sin dependencia</option>
+                  {tasks
+                    .filter((candidate) => candidate.id !== task.id)
+                    .map((candidate) => (
+                      <option key={candidate.id} value={candidate.id}>
+                        → {candidate.nombre || `Tarea ${candidate.orden + 1}`}
+                      </option>
+                    ))}
+                </Select>
 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeTask(task.id)}
-                  className="text-red-600 hover:text-red-800"
-                  title="Eliminar"
-                >
-                  ✕
-                </Button>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => moveTask(task.id, 'up')}
+                    disabled={index === 0}
+                    title="Mover arriba"
+                  >
+                    ↑
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => moveTask(task.id, 'down')}
+                    disabled={index === tasks.length - 1}
+                    title="Mover abajo"
+                  >
+                    ↓
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeTask(task.id)}
+                    className="text-red-600 hover:text-red-800"
+                    title="Eliminar"
+                  >
+                    ✕
+                  </Button>
+                </div>
               </div>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          ))
+        )}
 
         <Button variant="secondary" onClick={addTask} disabled={isLoading}>
           + Agregar tarea
         </Button>
       </div>
 
-      {/* Single action */}
       <div className="border-t border-gray-200 pt-4">
         <Button onClick={handleSave} disabled={isPending}>
           {isPending ? 'Guardando...' : 'Guardar'}

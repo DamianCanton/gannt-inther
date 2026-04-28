@@ -60,9 +60,9 @@ export function CreateObraForm({ action, disabled = false, onSuccess }: CreateOb
       onSubmit={handleSubmit}
       className="space-y-6"
     >
-      <div className="rounded-2xl border border-slate-200 bg-[linear-gradient(135deg,rgba(8,30,68,0.035),rgba(37,99,235,0.06))] p-5">
+      <div className="rounded-2xl border border-slate-200 bg-[linear-gradient(135deg,rgba(8,30,68,0.035),rgba(246,147,35,0.08))] p-5">
         <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-[0_14px_30px_-18px_rgba(37,99,235,0.95)]">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-accent text-white shadow-[0_14px_30px_-18px_rgba(246,147,35,0.95)]">
             <FilePlus2 className="h-5 w-5" strokeWidth={2.2} />
           </div>
           <div className="space-y-1">
@@ -107,7 +107,7 @@ export function CreateObraForm({ action, disabled = false, onSuccess }: CreateOb
             placeholder="Ej: Edificio Torres del Lago"
             required
             disabled={isPending || disabled}
-            className="h-12 rounded-xl border-slate-200 bg-white text-[14px] shadow-sm focus-visible:border-blue-400 focus-visible:ring-blue-300/40"
+            className="h-12 rounded-xl border-slate-200 bg-white text-[14px] shadow-sm focus-visible:border-accent focus-visible:ring-accent/40"
           />
         </div>
 
@@ -122,7 +122,7 @@ export function CreateObraForm({ action, disabled = false, onSuccess }: CreateOb
             type="date"
             required
             disabled={isPending || disabled}
-            className="h-12 rounded-xl border-slate-200 bg-white text-[14px] shadow-sm focus-visible:border-blue-400 focus-visible:ring-blue-300/40"
+            className="h-12 rounded-xl border-slate-200 bg-white text-[14px] shadow-sm focus-visible:border-accent focus-visible:ring-accent/40"
           />
         </div>
 
@@ -136,7 +136,7 @@ export function CreateObraForm({ action, disabled = false, onSuccess }: CreateOb
             name="cliente"
             placeholder="Opcional"
             disabled={isPending || disabled}
-            className="h-12 rounded-xl border-slate-200 bg-white text-[14px] shadow-sm focus-visible:border-blue-400 focus-visible:ring-blue-300/40"
+            className="h-12 rounded-xl border-slate-200 bg-white text-[14px] shadow-sm focus-visible:border-accent focus-visible:ring-accent/40"
           />
         </div>
 
@@ -150,7 +150,7 @@ export function CreateObraForm({ action, disabled = false, onSuccess }: CreateOb
             name="tipoObra"
             defaultValue="Tipo A"
             disabled={isPending || disabled}
-            className="h-12 rounded-xl border-slate-200 bg-white text-[14px] shadow-sm focus-visible:border-blue-400 focus-visible:ring-blue-300/40"
+            className="h-12 rounded-xl border-slate-200 bg-white text-[14px] shadow-sm focus-visible:border-accent focus-visible:ring-accent/40"
           >
             <option value="Tipo A">Tipo A</option>
             <option value="Tipo B">Tipo B</option>
@@ -166,7 +166,7 @@ export function CreateObraForm({ action, disabled = false, onSuccess }: CreateOb
             id="obra-vigencia"
             name="vigenciaTexto"
             placeholder="Opcional"
-            className="h-12 rounded-xl border-slate-200 bg-white text-[14px] shadow-sm focus-visible:border-blue-400 focus-visible:ring-blue-300/40"
+            className="h-12 rounded-xl border-slate-200 bg-white text-[14px] shadow-sm focus-visible:border-accent focus-visible:ring-accent/40"
             disabled={isPending || disabled}
           />
         </div>
@@ -174,7 +174,7 @@ export function CreateObraForm({ action, disabled = false, onSuccess }: CreateOb
         <div className="md:col-span-2 flex items-center justify-end gap-3 border-t border-slate-200 pt-4">
         <Button
           type="submit"
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-[14px] font-medium text-white shadow-[0_10px_24px_-14px_rgba(37,99,235,1)] transition-colors hover:bg-blue-700 focus-visible:ring-blue-400/60"
+          className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-[14px] font-medium text-white shadow-[0_10px_24px_-14px_rgba(246,147,35,1)] transition-colors hover:bg-accent/90 focus-visible:ring-accent/40"
           disabled={isPending || disabled}
         >
           {isPending ? (

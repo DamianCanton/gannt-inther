@@ -4,6 +4,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ScheduleTask } from '@/types/gantt'
 import { GanttInteractive } from '@/components/gantt/gantt-interactive'
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    refresh: vi.fn(),
+  }),
+}))
+
 function makeTask(overrides: Partial<ScheduleTask>): ScheduleTask {
   return {
     id: overrides.id ?? 'T1',

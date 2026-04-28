@@ -77,7 +77,7 @@ export function MiniGanttPreview({ obra }: MiniGanttPreviewProps) {
             className="border-l border-slate-200 px-1 py-1.5 text-center"
             aria-hidden="true"
           >
-            <span className={`font-semibold ${index + 1 === referenceColumn ? 'text-blue-600' : 'text-slate-700'}`}>
+            <span className={`font-semibold ${index + 1 === referenceColumn ? 'text-accent' : 'text-slate-700'}`}>
               {column.label}
             </span>
             <span className="block text-[9px] uppercase tracking-wide text-slate-400">{column.month}</span>
@@ -90,7 +90,7 @@ export function MiniGanttPreview({ obra }: MiniGanttPreviewProps) {
           <div key={`${column.key}-line`} className="border-l border-slate-100" />
         ))}
         <div
-          className="absolute inset-y-0 border-l border-dotted border-blue-300/90"
+          className="absolute inset-y-0 border-l border-dotted border-accent/50"
           style={{ left: `${(referenceColumn / COLUMNS.length) * 100}%` }}
         />
       </div>
@@ -124,8 +124,8 @@ export function MiniGanttPreview({ obra }: MiniGanttPreviewProps) {
               <>
                 <div
                   className={`absolute top-1/2 h-3 -translate-y-1/2 rounded-full ${
-                    rowBar.tone === 'strong' ? 'bg-blue-500/90' : 'bg-slate-400/80'
-                  } shadow-[0_4px_10px_-5px_rgba(37,99,235,0.55)]`}
+                    rowBar.tone === 'strong' ? 'bg-accent' : 'bg-slate-400/80'
+                  } shadow-[0_4px_10px_-5px_rgba(246,147,35,0.55)]`}
                   style={{
                     left: `calc(${LEFT_COLUMN_WIDTH}px + (${rowBar.startColumn} * ((100% - ${LEFT_COLUMN_WIDTH}px) / 6)) + 8px)`,
                     width: `calc((${rowBar.span} * ((100% - ${LEFT_COLUMN_WIDTH}px) / 6)) - 16px)`,

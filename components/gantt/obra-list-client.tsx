@@ -83,7 +83,8 @@ export function ObraListClient({ initialObras, createAction }: ObraListClientPro
     // Optimistic update — remove from local state
     setObras((prev) => prev.filter((o) => o.id !== obraToDelete.id))
     setObraToDelete(null)
-  }, [obraToDelete])
+    router.refresh()
+  }, [obraToDelete, router])
 
   const handleDeleteCancel = useCallback(() => {
     setObraToDelete(null)
@@ -111,7 +112,7 @@ export function ObraListClient({ initialObras, createAction }: ObraListClientPro
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             aria-label="Buscar obras"
-            className="h-11 rounded-xl border-slate-200 bg-white pl-9 text-[14px] shadow-sm focus-visible:border-blue-400 focus-visible:ring-blue-300/40"
+            className="h-11 rounded-xl border-slate-200 bg-white pl-9 text-[14px] shadow-sm focus-visible:border-accent focus-visible:ring-accent/40"
           />
         </div>
 
@@ -123,7 +124,7 @@ export function ObraListClient({ initialObras, createAction }: ObraListClientPro
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            className="inline-flex h-11 items-center gap-2 rounded-xl bg-blue-600 px-5 text-[14px] font-medium text-white shadow-[0_10px_24px_-14px_rgba(37,99,235,1)] transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/60 focus-visible:ring-offset-2"
+            className="inline-flex h-11 items-center gap-2 rounded-xl bg-accent px-5 text-[14px] font-medium text-white shadow-[0_10px_24px_-14px_rgba(246,147,35,1)] transition-colors hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2"
             aria-label="Crear diagrama nuevo"
           >
             <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
@@ -154,7 +155,7 @@ export function ObraListClient({ initialObras, createAction }: ObraListClientPro
               <button
                 type="button"
                 onClick={() => setIsCreateModalOpen(true)}
-                className="mt-2 inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2 text-[13px] font-medium text-primary hover:bg-primary/10 transition-colors"
+                className="mt-2 inline-flex items-center gap-2 rounded-lg border border-accent/30 bg-accent/5 px-4 py-2 text-[13px] font-medium text-accent hover:bg-accent/10 transition-colors"
               >
                 <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
                 Crear diagrama nuevo

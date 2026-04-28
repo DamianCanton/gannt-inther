@@ -1,5 +1,7 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
+
 import {
   GanttCrudService,
   TaskMutationError,
@@ -108,6 +110,8 @@ export async function mutateTask(input: MutateTaskInput): Promise<GanttMutationR
       holidays: persistedSchedule.holidays,
       changedTaskId: input.intent === 'delete' ? undefined : changedTaskId,
     }).tasks
+
+    revalidatePath(`/obra/${input.obraId}`)
 
     return { schedule }
   } catch (error) {

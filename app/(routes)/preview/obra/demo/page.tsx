@@ -101,7 +101,7 @@ async function previewMutateTask(_payload: GanttEditIntent & { obraId: string })
 
 export default function PreviewInteractiveGanttPage() {
   return (
-    <div className="min-h-screen bg-slate-100/80">
+    <div className="min-h-screen bg-slate-50/70">
       <GanttInteractive
         obraNombre="teco 3"
         projectId="preview-project"
