@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
+import { memo, useCallback, useEffect, useState, useTransition } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
+import { useToast } from '@/components/ui/toast'
 import type { TipoObra } from '@/types/gantt'
 
 interface TemplateTask {
@@ -19,6 +20,17 @@ interface TemplateTask {
 interface TemplateEditorProps {
   saveAction: (formData: FormData) => Promise<void>
   loadTasksAction: (tipoObra: TipoObra) => Promise<{ tasks: TemplateTask[] }>
+}
+
+interface TemplateTaskRowProps {
+  task: TemplateTask
+  index: number
+  total: number
+  options: Array<{ id: string; label: string }>
+  disabled: boolean
+  onMove: (id: string, direction: 'up' | 'down') => void
+  onRemove: (id: string) => void
+  onUpdate: (id: string, field: keyof TemplateTask, value: string | number | null) => void
 }
 
 function createEmptyTask(orden: number): TemplateTask {
@@ -46,13 +58,95 @@ function validateDraft(tasks: TemplateTask[]): string | null {
   return null
 }
 
+const TemplateTaskRow = memo(function TemplateTaskRow({
+  task,
+  index,
+  total,
+  options,
+  disabled,
+  onMove,
+  onRemove,
+  onUpdate,
+}: TemplateTaskRowProps) {
+  return (
+    <Card className="space-y-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="w-8 font-mono text-sm tabular-nums text-gray-500">{index + 1}.</span>
+
+        <div className="min-w-[200px] flex-1">
+          <Input
+            className="w-full"
+            placeholder="Nombre de la tarea"
+            value={task.nombre}
+            onChange={(event) => onUpdate(task.id, 'nombre', event.target.value)}
+            disabled={disabled}
+          />
+        </div>
+
+        <div className="w-20">
+          <Input
+            className="w-full text-center"
+            type="number"
+            min={1}
+            value={task.duracionDias}
+            onChange={(event) => onUpdate(task.id, 'duracionDias', Number(event.target.value))}
+            title="Duración en días hábiles"
+            disabled={disabled}
+          />
+        </div>
+        <span className="text-xs text-gray-500">días</span>
+
+        <Select
+          className="min-w-[160px]"
+          value={task.dependeDeTemplateId ?? ''}
+          onChange={(event) => onUpdate(task.id, 'dependeDeTemplateId', event.target.value || null)}
+          disabled={disabled}
+        >
+          <option value="">Sin dependencia</option>
+          {options
+            .filter((candidate) => candidate.id !== task.id)
+            .map((candidate) => (
+              <option key={candidate.id} value={candidate.id}>
+                → {candidate.label}
+              </option>
+            ))}
+        </Select>
+
+        <div className="flex gap-1">
+          <Button variant="ghost" size="sm" onClick={() => onMove(task.id, 'up')} disabled={disabled || index === 0} title="Mover arriba">
+            ↑
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onMove(task.id, 'down')}
+            disabled={disabled || index === total - 1}
+            title="Mover abajo"
+          >
+            ↓
+          </Button>
+
+          <Button variant="ghost" size="sm" onClick={() => onRemove(task.id)} className="text-red-600 hover:text-red-800" title="Eliminar" disabled={disabled}>
+            ✕
+          </Button>
+        </div>
+      </div>
+    </Card>
+  )
+})
+
 export function TemplateEditor({ saveAction, loadTasksAction }: TemplateEditorProps) {
   const [selectedType, setSelectedType] = useState<TipoObra>('SPLIT')
   const [tasks, setTasks] = useState<TemplateTask[]>([createEmptyTask(0)])
-  const [validationError, setValidationError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [isLoading, setIsLoading] = useState(false)
   const [hasLoaded, setHasLoaded] = useState(false)
+  const { toast } = useToast()
+
+  const taskOptions = tasks.map((candidate) => ({
+    id: candidate.id,
+    label: candidate.nombre || `Tarea ${candidate.orden + 1}`,
+  }))
 
   useEffect(() => {
     let cancelled = false
@@ -82,11 +176,11 @@ export function TemplateEditor({ saveAction, loadTasksAction }: TemplateEditorPr
     }
   }, [selectedType, loadTasksAction])
 
-  const addTask = () => {
+  const addTask = useCallback(() => {
     setTasks((previous) => [...previous, createEmptyTask(previous.length)])
-  }
+  }, [])
 
-  const removeTask = (id: string) => {
+  const removeTask = useCallback((id: string) => {
     setTasks((previous) => {
       const filtered = previous.filter((task) => task.id !== id)
       return filtered.map((task, index) => ({
@@ -95,13 +189,13 @@ export function TemplateEditor({ saveAction, loadTasksAction }: TemplateEditorPr
         dependeDeTemplateId: task.dependeDeTemplateId === id ? null : task.dependeDeTemplateId,
       }))
     })
-  }
+  }, [])
 
-  const updateTask = (id: string, field: keyof TemplateTask, value: string | number | null) => {
+  const updateTask = useCallback((id: string, field: keyof TemplateTask, value: string | number | null) => {
     setTasks((previous) => previous.map((task) => (task.id === id ? { ...task, [field]: value } : task)))
-  }
+  }, [])
 
-  const moveTask = (id: string, direction: 'up' | 'down') => {
+  const moveTask = useCallback((id: string, direction: 'up' | 'down') => {
     setTasks((previous) => {
       const index = previous.findIndex((task) => task.id === id)
       if (index === -1) return previous
@@ -115,21 +209,23 @@ export function TemplateEditor({ saveAction, loadTasksAction }: TemplateEditorPr
 
       return next.map((task, nextIndex) => ({ ...task, orden: nextIndex }))
     })
-  }
+  }, [])
 
   const handleTypeChange = (tipo: TipoObra) => {
     setSelectedType(tipo)
-    setValidationError(null)
   }
 
   const handleSave = () => {
     const error = validateDraft(tasks)
     if (error) {
-      setValidationError(error)
+      toast({
+        variant: 'error',
+        title: 'No se pudo guardar la plantilla',
+        description: error,
+      })
       return
     }
 
-    setValidationError(null)
     const formData = new FormData()
     formData.set('tipoObra', selectedType)
     formData.set('tasks', JSON.stringify(tasks))
@@ -167,11 +263,6 @@ export function TemplateEditor({ saveAction, loadTasksAction }: TemplateEditorPr
           </div>
         )}
 
-        {validationError ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {validationError}
-          </div>
-        ) : null}
       </Card>
 
       <div className="space-y-3">
@@ -183,78 +274,17 @@ export function TemplateEditor({ saveAction, loadTasksAction }: TemplateEditorPr
           </Card>
         ) : (
           tasks.map((task, index) => (
-            <Card key={task.id} className="space-y-3">
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="w-8 font-mono text-sm tabular-nums text-gray-500">{index + 1}.</span>
-
-                <div className="min-w-[200px] flex-1">
-                  <Input
-                    className="w-full"
-                    placeholder="Nombre de la tarea"
-                    value={task.nombre}
-                    onChange={(event) => updateTask(task.id, 'nombre', event.target.value)}
-                  />
-                </div>
-
-                <div className="w-20">
-                  <Input
-                    className="w-full text-center"
-                    type="number"
-                    min={1}
-                    value={task.duracionDias}
-                    onChange={(event) => updateTask(task.id, 'duracionDias', Number(event.target.value))}
-                    title="Duración en días hábiles"
-                  />
-                </div>
-                <span className="text-xs text-gray-500">días</span>
-
-                <Select
-                  className="min-w-[160px]"
-                  value={task.dependeDeTemplateId ?? ''}
-                  onChange={(event) => updateTask(task.id, 'dependeDeTemplateId', event.target.value || null)}
-                >
-                  <option value="">Sin dependencia</option>
-                  {tasks
-                    .filter((candidate) => candidate.id !== task.id)
-                    .map((candidate) => (
-                      <option key={candidate.id} value={candidate.id}>
-                        → {candidate.nombre || `Tarea ${candidate.orden + 1}`}
-                      </option>
-                    ))}
-                </Select>
-
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => moveTask(task.id, 'up')}
-                    disabled={index === 0}
-                    title="Mover arriba"
-                  >
-                    ↑
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => moveTask(task.id, 'down')}
-                    disabled={index === tasks.length - 1}
-                    title="Mover abajo"
-                  >
-                    ↓
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeTask(task.id)}
-                    className="text-red-600 hover:text-red-800"
-                    title="Eliminar"
-                  >
-                    ✕
-                  </Button>
-                </div>
-              </div>
-            </Card>
+              <TemplateTaskRow
+                key={task.id}
+                task={task}
+                index={index}
+                total={tasks.length}
+                options={taskOptions}
+                disabled={isPending}
+                onMove={moveTask}
+                onRemove={removeTask}
+                onUpdate={updateTask}
+            />
           ))
         )}
 

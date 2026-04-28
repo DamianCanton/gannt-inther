@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Dialog } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { useToast } from '@/components/ui/toast'
 import { changePassword, signout, updateProfile } from '@/lib/actions/perfil'
 
 interface PerfilPageClientProps {
@@ -33,6 +34,7 @@ export function PerfilPageClient({ email, createdAt, lastSignInAt, displayName, 
   const router = useRouter()
   const [profileOpen, setProfileOpen] = useState(false)
   const [passwordOpen, setPasswordOpen] = useState(false)
+  const { toast } = useToast()
 
   const [profileState, profileAction] = useFormState(updateProfile, {
     error: undefined,
@@ -48,10 +50,17 @@ export function PerfilPageClient({ email, createdAt, lastSignInAt, displayName, 
 
   const profileRefreshLocked = useRef(false)
   const passwordRefreshLocked = useRef(false)
+  const profileErrorToastLocked = useRef(false)
+  const passwordErrorToastLocked = useRef(false)
 
   useEffect(() => {
     if (profileState.success && !profileRefreshLocked.current) {
       profileRefreshLocked.current = true
+      toast({
+        variant: 'success',
+        title: 'Perfil actualizado',
+        description: profileState.success,
+      })
       router.refresh()
       return
     }
@@ -59,11 +68,30 @@ export function PerfilPageClient({ email, createdAt, lastSignInAt, displayName, 
     if (!profileState.success) {
       profileRefreshLocked.current = false
     }
-  }, [profileState.success, router])
+  }, [profileState.success, router, toast])
+
+  useEffect(() => {
+    if (profileState.error && !profileErrorToastLocked.current) {
+      profileErrorToastLocked.current = true
+      toast({
+        variant: 'error',
+        title: 'No se pudo actualizar el perfil',
+        description: profileState.error,
+      })
+    }
+    if (!profileState.error) {
+      profileErrorToastLocked.current = false
+    }
+  }, [profileState.error, toast])
 
   useEffect(() => {
     if (passwordState.success && !passwordRefreshLocked.current) {
       passwordRefreshLocked.current = true
+      toast({
+        variant: 'success',
+        title: 'Contraseña actualizada',
+        description: passwordState.success,
+      })
       router.refresh()
       return
     }
@@ -71,7 +99,21 @@ export function PerfilPageClient({ email, createdAt, lastSignInAt, displayName, 
     if (!passwordState.success) {
       passwordRefreshLocked.current = false
     }
-  }, [passwordState.success, router])
+  }, [passwordState.success, router, toast])
+
+  useEffect(() => {
+    if (passwordState.error && !passwordErrorToastLocked.current) {
+      passwordErrorToastLocked.current = true
+      toast({
+        variant: 'error',
+        title: 'No se pudo cambiar la contraseña',
+        description: passwordState.error,
+      })
+    }
+    if (!passwordState.error) {
+      passwordErrorToastLocked.current = false
+    }
+  }, [passwordState.error, toast])
 
   return (
     <main className="min-h-screen bg-slate-50/70 px-6 py-8">
@@ -122,8 +164,6 @@ export function PerfilPageClient({ email, createdAt, lastSignInAt, displayName, 
             </Button>
           </div>
 
-          {profileState.success ? <p className="text-sm text-green-700">{profileState.success}</p> : null}
-          {passwordState.success ? <p className="text-sm text-green-700">{passwordState.success}</p> : null}
         </Card>
 
         <Dialog open={profileOpen} onClose={() => setProfileOpen(false)} title="Editar perfil">
@@ -136,8 +176,6 @@ export function PerfilPageClient({ email, createdAt, lastSignInAt, displayName, 
               required
               error={profileState.fieldErrors?.displayName}
             />
-
-            {profileState.error ? <p className="text-sm text-red-600">{profileState.error}</p> : null}
 
             <div className="flex justify-end gap-2">
               <Button type="button" variant="secondary" onClick={() => setProfileOpen(false)}>
@@ -176,8 +214,6 @@ export function PerfilPageClient({ email, createdAt, lastSignInAt, displayName, 
               required
               error={passwordState.fieldErrors?.confirmPassword}
             />
-
-            {passwordState.error ? <p className="text-sm text-red-600">{passwordState.error}</p> : null}
 
             <div className="flex justify-end gap-2">
               <Button type="button" variant="secondary" onClick={() => setPasswordOpen(false)}>

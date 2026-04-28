@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 
 import { AuthContextError } from '@/lib/auth/auth-context'
 import { requireAdmin } from '@/lib/auth/guards'
+import { ToastOnMount } from '@/components/ui/toast-on-mount'
 
 const sections: Array<{
   href: '/perfil/admin/usuarios' | '/perfil/admin/templates'
@@ -58,20 +59,18 @@ export default async function PerfilAdminPage() {
     if (error instanceof AuthContextError && error.code === 'FORBIDDEN') {
       return (
         <div className="mx-auto max-w-4xl p-8">
+          <ToastOnMount variant="error" title="Acceso denegado" description="No tenés permisos de administrador." />
           <h1 className="mb-3 text-2xl font-bold">Panel administrativo</h1>
-          <p className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
-            No tenés permisos de administrador.
-          </p>
+          <p className="text-sm text-amber-700">No tenés permisos de administrador.</p>
         </div>
       )
     }
 
     return (
       <div className="mx-auto max-w-4xl p-8">
+        <ToastOnMount variant="error" title="Error cargando panel" description={error instanceof Error ? error.message : 'Error inesperado'} />
         <h1 className="mb-3 text-2xl font-bold">Panel administrativo</h1>
-        <p className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          Error: {error instanceof Error ? error.message : 'Error inesperado'}
-        </p>
+        <p className="text-sm text-red-700">Error: {error instanceof Error ? error.message : 'Error inesperado'}</p>
       </div>
     )
   }

@@ -12,13 +12,13 @@ import {
 
 const {
   requireAdminMock,
+  createServerClientMock,
   createUserMock,
   upsertProjectMembershipMock,
   upsertObraMembershipMock,
   getObraProjectMock,
   getProjectMembershipMock,
   updateProfileMock,
-  listUsersMock,
   selectProfilesReturnsMock,
   selectObraMembershipsReturnsMock,
   selectProjectMembershipsForListMock,
@@ -28,13 +28,13 @@ const {
   selectObrasForCatalogMock,
 } = vi.hoisted(() => ({
   requireAdminMock: vi.fn(),
+  createServerClientMock: vi.fn(),
   createUserMock: vi.fn(),
   upsertProjectMembershipMock: vi.fn(),
   upsertObraMembershipMock: vi.fn(),
   getObraProjectMock: vi.fn(),
   getProjectMembershipMock: vi.fn(),
   updateProfileMock: vi.fn(),
-  listUsersMock: vi.fn(),
   selectProfilesReturnsMock: vi.fn(),
   selectObraMembershipsReturnsMock: vi.fn(),
   selectProjectMembershipsForListMock: vi.fn(),
@@ -48,12 +48,15 @@ vi.mock('@/lib/auth/guards', () => ({
   requireAdmin: requireAdminMock,
 }))
 
+vi.mock('@/lib/supabase/server', () => ({
+  createServerClient: () => createServerClientMock(),
+}))
+
 vi.mock('@/lib/supabase/admin', () => ({
   createServiceRoleClient: () => ({
     auth: {
       admin: {
         createUser: createUserMock,
-        listUsers: listUsersMock,
       },
     },
     from: (table: string) => {
@@ -142,7 +145,6 @@ describe('admin users actions', () => {
     upsertProjectMembershipMock.mockResolvedValue({ error: null })
     upsertObraMembershipMock.mockResolvedValue({ error: null })
     updateProfileMock.mockResolvedValue({ error: null })
-    listUsersMock.mockResolvedValue({ data: { users: [] }, error: null })
     selectProfilesReturnsMock.mockResolvedValue({ data: [], error: null })
     selectProjectMembershipsForListMock.mockResolvedValue({ data: [], error: null })
     selectProjectMembershipsForCatalogMock.mockResolvedValue({ data: [], error: null })
@@ -157,6 +159,74 @@ describe('admin users actions', () => {
     getProjectMembershipMock.mockResolvedValue({
       data: null,
       error: null,
+    })
+
+    createServerClientMock.mockReturnValue({
+      from: (table: string) => {
+        if (table === 'projects') {
+          return {
+            select: () => ({
+              returns: () => selectProjectsForCatalogMock(),
+            }),
+          }
+        }
+
+        if (table === 'project_memberships') {
+          return {
+            select: (columns?: string) => {
+              if (columns?.includes('role')) {
+                return {
+                  returns: () => selectProjectMembershipsForListMock(),
+                }
+              }
+
+              return {
+                returns: () => selectProjectMembershipsForCatalogMock(),
+              }
+            },
+          }
+        }
+
+        if (table === 'profiles') {
+          return {
+            select: () => ({
+              returns: () => selectProfilesReturnsMock(),
+            }),
+          }
+        }
+
+        if (table === 'obra_memberships') {
+          return {
+            select: () => ({
+              returns: () => selectObraMembershipsReturnsMock(),
+            }),
+          }
+        }
+
+        if (table === 'obras') {
+          return {
+            select: (columns?: string) => {
+              if (columns?.includes('project_id')) {
+                return {
+                  returns: () => selectObrasForCatalogMock(),
+                }
+              }
+
+              return {
+                in: () => ({
+                  returns: () => inObrasReturnsMock(),
+                }),
+              }
+            },
+          }
+        }
+
+        return {
+          select: () => ({
+            returns: vi.fn(),
+          }),
+        }
+      },
     })
   })
 
@@ -241,26 +311,14 @@ describe('admin users actions', () => {
 
     await expect(listUsersForAdmin()).rejects.toThrow('FORBIDDEN')
     expect(requireAdminMock).toHaveBeenCalledTimes(1)
-    expect(listUsersMock).not.toHaveBeenCalled()
   })
 
   it('listUsersForAdmin merges users, profiles, project memberships and obra names', async () => {
-    listUsersMock.mockResolvedValueOnce({
-      data: {
-        users: [
-          {
-            id: 'u-1',
-            email: 'uno@example.com',
-          },
-        ],
-      },
-      error: null,
-    })
-
     selectProfilesReturnsMock.mockResolvedValueOnce({
       data: [
         {
           user_id: 'u-1',
+          email: 'uno@example.com',
           display_name: 'Uno',
           global_role: 'admin',
           is_active: false,
@@ -330,6 +388,13 @@ describe('admin users actions', () => {
   it('listAdminCatalog returns projects using projects table as source of truth', async () => {
     selectProjectsForCatalogMock.mockResolvedValueOnce({
       data: [{ id: 'p-1', nombre: 'Proyecto Norte' }],
+      error: null,
+    })
+    selectProjectMembershipsForCatalogMock.mockResolvedValueOnce({
+      data: [
+        { user_id: 'u-1', project_id: 'p-1' },
+        { user_id: 'u-2', project_id: 'p-1' },
+      ],
       error: null,
     })
     selectProjectMembershipsForListMock.mockResolvedValueOnce({

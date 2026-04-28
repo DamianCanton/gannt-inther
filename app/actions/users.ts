@@ -2,6 +2,7 @@
 
 import { requireAdmin } from '@/lib/auth/guards'
 import { createServiceRoleClient } from '@/lib/supabase/admin'
+import { createServerClient } from '@/lib/supabase/server'
 
 export type ActionResult = {
   success: boolean
@@ -180,6 +181,7 @@ export async function createUser(
     const { error: profileError } = await supabase.from('profiles').upsert(
       {
         user_id: data.user.id,
+        email,
         display_name: displayName.trim(),
         global_role: globalRole,
         is_active: true,
@@ -299,14 +301,13 @@ export async function deactivateUser(userId: string): Promise<ActionResult> {
 
 export async function listUsersForAdmin(): Promise<AdminUserRecord[]> {
   await requireAdmin()
-  const supabase = createServiceRoleClient()
+  const supabase = createServerClient()
 
-  const [{ data: usersData, error: usersError }, { data: profilesData, error: profilesError }, { data: projectMembershipsData, error: projectMembershipsError }, { data: obraMembershipsData, error: obraMembershipsError }] = await Promise.all([
-    supabase.auth.admin.listUsers({ page: 1, perPage: 1000 }),
+  const [{ data: profilesData, error: profilesError }, { data: projectMembershipsData, error: projectMembershipsError }, { data: obraMembershipsData, error: obraMembershipsError }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('user_id, display_name, global_role, is_active')
-      .returns<Array<{ user_id: string; display_name: string; global_role: GlobalRole; is_active: boolean }>>(),
+      .select('user_id, email, display_name, global_role, is_active')
+      .returns<Array<{ user_id: string; email: string; display_name: string; global_role: GlobalRole; is_active: boolean }>>(),
     supabase
       .from('project_memberships')
       .select('user_id, project_id, role')
@@ -317,7 +318,7 @@ export async function listUsersForAdmin(): Promise<AdminUserRecord[]> {
       .returns<Array<{ user_id: string; obra_id: string; role: ObraMembershipRole }>>(),
   ])
 
-  if (usersError || profilesError || projectMembershipsError || obraMembershipsError) {
+  if (profilesError || projectMembershipsError || obraMembershipsError) {
     return []
   }
 
@@ -338,17 +339,15 @@ export async function listUsersForAdmin(): Promise<AdminUserRecord[]> {
     }
   }
 
-  const users = usersData?.users ?? []
-
-  return users.map((user) => {
-    const profile = (profilesData ?? []).find((item) => item.user_id === user.id)
+  return (profilesData ?? []).map((profile) => {
+    const userId = profile.user_id
 
     const projects = (projectMembershipsData ?? [])
-      .filter((membership) => membership.user_id === user.id)
+      .filter((membership) => membership.user_id === userId)
       .map((membership) => ({ projectId: membership.project_id, role: membership.role }))
 
     const obras = (obraMembershipsData ?? [])
-      .filter((membership) => membership.user_id === user.id)
+      .filter((membership) => membership.user_id === userId)
       .map((membership) => ({
         obraId: membership.obra_id,
         obraNombre: obrasById.get(membership.obra_id) ?? membership.obra_id,
@@ -356,11 +355,11 @@ export async function listUsersForAdmin(): Promise<AdminUserRecord[]> {
       }))
 
     return {
-      userId: user.id,
-      email: user.email ?? '',
-      displayName: profile?.display_name ?? '',
-      globalRole: profile?.global_role ?? 'member',
-      isActive: profile?.is_active ?? true,
+      userId,
+      email: profile.email,
+      displayName: profile.display_name,
+      globalRole: profile.global_role,
+      isActive: profile.is_active,
       projects,
       obras,
     }
@@ -370,7 +369,7 @@ export async function listUsersForAdmin(): Promise<AdminUserRecord[]> {
 export async function listAdminCatalog(): Promise<AdminCatalog> {
   await requireAdmin()
 
-  const supabase = createServiceRoleClient()
+  const supabase = createServerClient()
 
   const [projectsResult, projectMembershipsResult, obrasResult] = await Promise.all([
     supabase.from('projects').select('id, nombre').returns<Array<{ id: string; nombre: string }>>(),

@@ -6,6 +6,7 @@ import { CalendarDays, Building2, FilePlus2, FolderKanban, UserRound } from 'luc
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
+import { useToast } from '@/components/ui/toast'
 import type { ActionResponse } from '@/app/(routes)/obras/actions'
 
 export interface CreateObraFormProps {
@@ -25,11 +26,10 @@ export interface CreateObraFormProps {
 export function CreateObraForm({ action, disabled = false, onSuccess }: CreateObraFormProps) {
   const formRef = useRef<HTMLFormElement>(null)
   const [isPending, setIsPending] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { toast } = useToast()
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    setError(null)
     setIsPending(true)
 
     const formData = new FormData(e.currentTarget)
@@ -45,12 +45,21 @@ export function CreateObraForm({ action, disabled = false, onSuccess }: CreateOb
         ATOMIC_WRITE_FAILED: 'No se pudo completar la operación. Intentá nuevamente.',
         UNAUTHENTICATED: 'Debés iniciar sesión para continuar.',
       }
-      setError(messages[result.error ?? ''] ?? 'Ocurrió un error inesperado al procesar la operación.')
+      toast({
+        variant: 'error',
+        title: 'No se pudo crear la obra',
+        description: messages[result.error ?? ''] ?? 'Ocurrió un error inesperado al procesar la operación.',
+      })
       return
     }
 
     // Reset form on success
     formRef.current?.reset()
+    toast({
+      variant: 'success',
+      title: 'Obra creada',
+      description: 'El nuevo diagrama quedó listo para usar.',
+    })
     onSuccess?.()
   }
 
@@ -75,25 +84,6 @@ export function CreateObraForm({ action, disabled = false, onSuccess }: CreateOb
           </div>
         </div>
       </div>
-
-      {error && (
-        <div className="rounded-2xl border border-red-200/80 bg-red-50/80 px-4 py-3 text-[13px] text-red-700 flex items-start gap-2.5">
-          <svg
-            className="h-4 w-4 text-red-400 mt-0.5 shrink-0"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
-            />
-          </svg>
-          <span>{error}</span>
-        </div>
-      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-1.5">

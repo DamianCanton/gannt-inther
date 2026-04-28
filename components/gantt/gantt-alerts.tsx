@@ -1,3 +1,9 @@
+'use client'
+
+import { useEffect, useRef } from 'react'
+
+import { useToast } from '@/components/ui/toast'
+
 import type { GanttMutationError } from './gantt-types'
 
 export interface GanttAlertsProps {
@@ -13,37 +19,71 @@ export function GanttAlerts({
   isMutating,
   blockingError = null,
 }: GanttAlertsProps) {
-  if (blockingError) {
-    return (
-      <p className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-        {blockingError}
-      </p>
-    )
-  }
+  const { toast } = useToast()
+  const cycleWarningShown = useRef<string | null>(null)
+  const saveErrorShown = useRef<string | null>(null)
+  const blockingErrorShown = useRef<string | null>(null)
+  const mutatingShown = useRef(false)
 
-  return (
-    <>
-      {cycleWarning ? (
-        <p className="rounded border border-red-200 bg-red-50 p-2 text-sm text-red-700">
-          Dependencia circular detectada: {cycleWarning}
-        </p>
-      ) : null}
+  useEffect(() => {
+    if (blockingError && blockingErrorShown.current !== blockingError) {
+      blockingErrorShown.current = blockingError
+      toast({
+        variant: 'error',
+        title: 'Bloqueo del cronograma',
+        description: blockingError,
+      })
+    }
 
-      {saveError ? (
-        <p className="rounded border border-red-200 bg-red-50 p-2 text-sm text-red-700">
-          {saveError.message}
-        </p>
-      ) : null}
+    if (!blockingError) {
+      blockingErrorShown.current = null
+    }
+  }, [blockingError, toast])
 
-      {isMutating ? (
-        <p
-          role="status"
-          aria-live="polite"
-          className="rounded border border-accent/20 bg-accent/10 p-2 text-sm text-accent"
-        >
-          Guardando cambios en el cronograma...
-        </p>
-      ) : null}
-    </>
-  )
+  useEffect(() => {
+    if (cycleWarning && cycleWarningShown.current !== cycleWarning) {
+      cycleWarningShown.current = cycleWarning
+      toast({
+        variant: 'error',
+        title: 'Dependencia circular detectada',
+        description: cycleWarning,
+      })
+    }
+
+    if (!cycleWarning) {
+      cycleWarningShown.current = null
+    }
+  }, [cycleWarning, toast])
+
+  useEffect(() => {
+    if (saveError && saveErrorShown.current !== saveError.message) {
+      saveErrorShown.current = saveError.message
+      toast({
+        variant: 'error',
+        title: 'No se pudo guardar el cronograma',
+        description: saveError.message,
+      })
+    }
+
+    if (!saveError) {
+      saveErrorShown.current = null
+    }
+  }, [saveError, toast])
+
+  useEffect(() => {
+    if (isMutating && !mutatingShown.current) {
+      mutatingShown.current = true
+      toast({
+        variant: 'info',
+        title: 'Guardando cambios en el cronograma',
+        duration: 1800,
+      })
+    }
+
+    if (!isMutating) {
+      mutatingShown.current = false
+    }
+  }, [isMutating, toast])
+
+  return null
 }

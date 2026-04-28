@@ -1,11 +1,12 @@
 'use client'
 
-import { type FormEvent, useEffect, useId, useMemo, useState } from 'react'
+import { type FormEvent, useEffect, useId, useMemo, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { HelpPopover } from '@/components/ui/help-popover'
 import { Input } from '@/components/ui/input'
 import { Select } from '@/components/ui/select'
+import { useToast } from '@/components/ui/toast'
 import { detectSmartInsertConflict, type SmartInsertConflict } from '@/lib/domain/smart-insert'
 import type { ScheduleTask, Uuid } from '@/types/gantt'
 
@@ -99,6 +100,8 @@ export function TaskEditor(props: TaskEditorProps) {
   const [pendingConflict, setPendingConflict] = useState<SmartInsertConflict | null>(null)
   const [pendingPayload, setPendingPayload] = useState<GanttEditIntent | null>(null)
   const formFieldPrefix = useId()
+  const { toast } = useToast()
+  const lastToastErrorRef = useRef<string | null>(null)
 
   const nameInputId = `${formFieldPrefix}-name`
   const durationInputId = `${formFieldPrefix}-duration`
@@ -317,6 +320,21 @@ export function TaskEditor(props: TaskEditorProps) {
   }
 
   const mergedError = externalError ?? localError
+
+  useEffect(() => {
+    if (mergedError && lastToastErrorRef.current !== mergedError) {
+      lastToastErrorRef.current = mergedError
+      toast({
+        variant: 'error',
+        title: 'No se pudo completar la tarea',
+        description: mergedError,
+      })
+    }
+
+    if (!mergedError) {
+      lastToastErrorRef.current = null
+    }
+  }, [mergedError, toast])
   const isPending = saving || pending
 
   return (
@@ -474,8 +492,6 @@ export function TaskEditor(props: TaskEditorProps) {
               : 'Eliminando tarea...'}
         </p>
       ) : null}
-
-      {mergedError ? <p className="text-sm text-red-600">{mergedError}</p> : null}
 
       <div className="flex justify-end gap-2 border-t border-gray-100 pt-4">
         {onCancel ? (

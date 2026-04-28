@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-import { AlertTriangle, FileText, Plus, Search } from 'lucide-react'
+import { FileText, Plus, Search } from 'lucide-react'
 
 import { deleteObraAction } from '@/app/(routes)/obras/actions'
 import { CreateObraForm } from '@/components/gantt/create-obra-form'
@@ -11,6 +11,7 @@ import { DeleteObraDialog } from '@/components/gantt/delete-dialog'
 import { ObraCard } from '@/components/gantt/obra-card'
 import { Dialog } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { useToast } from '@/components/ui/toast'
 import type { ActionResponse } from '@/app/(routes)/obras/actions'
 import type { ObraDTO } from '@/types/gantt'
 
@@ -33,8 +34,8 @@ export function ObraListClient({ initialObras, createAction }: ObraListClientPro
   const [searchTerm, setSearchTerm] = useState('')
   const [obraToDelete, setObraToDelete] = useState<ObraDTO | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const { toast } = useToast()
 
   // Derived state — filtered obras calculated during render
   const filteredObras = useMemo(() => {
@@ -51,7 +52,6 @@ export function ObraListClient({ initialObras, createAction }: ObraListClientPro
     const obra = obras.find((o) => o.id === obraId)
     if (obra) {
       setObraToDelete(obra)
-      setDeleteError(null)
     }
   }, [obras])
 
@@ -59,7 +59,6 @@ export function ObraListClient({ initialObras, createAction }: ObraListClientPro
     if (!obraToDelete) return
 
     setIsDeleting(true)
-    setDeleteError(null)
 
     const formData = new FormData()
     formData.set('obraId', obraToDelete.id)
@@ -76,19 +75,27 @@ export function ObraListClient({ initialObras, createAction }: ObraListClientPro
         ATOMIC_WRITE_FAILED: 'No se pudo eliminar. Intentá nuevamente.',
         UNAUTHENTICATED: 'Debés iniciar sesión para continuar.',
       }
-      setDeleteError(messages[result.error ?? ''] ?? 'Error inesperado al eliminar.')
+      toast({
+        variant: 'error',
+        title: 'No se pudo eliminar la obra',
+        description: messages[result.error ?? ''] ?? 'Error inesperado al eliminar.',
+      })
       return
     }
 
     // Optimistic update — remove from local state
     setObras((prev) => prev.filter((o) => o.id !== obraToDelete.id))
     setObraToDelete(null)
+    toast({
+      variant: 'success',
+      title: 'Obra eliminada',
+      description: `${obraToDelete.nombre} se quitó del listado.`,
+    })
     router.refresh()
-  }, [obraToDelete, router])
+  }, [obraToDelete, router, toast])
 
   const handleDeleteCancel = useCallback(() => {
     setObraToDelete(null)
-    setDeleteError(null)
   }, [])
 
   const handleCreateSuccess = useCallback(() => {
@@ -200,13 +207,6 @@ export function ObraListClient({ initialObras, createAction }: ObraListClientPro
         />
       )}
 
-      {/* Delete Error */}
-      {deleteError && !obraToDelete && (
-        <div className="rounded-lg border border-red-200/80 bg-red-50/50 px-4 py-3 text-[13px] text-red-700 flex items-start gap-2.5">
-          <AlertTriangle className="h-4 w-4 text-red-400 mt-0.5 shrink-0" strokeWidth={2} />
-          <span>{deleteError}</span>
-        </div>
-      )}
     </div>
   )
 }

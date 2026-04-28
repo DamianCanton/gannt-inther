@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { ToastOnMount } from '@/components/ui/toast-on-mount'
 
 /**
  * Error boundary para /obras.
@@ -16,6 +17,11 @@ export default function ObrasError({
 }) {
   return (
     <div className="p-8">
+      <ToastOnMount
+        variant="error"
+        title="No se pudieron cargar las obras"
+        description={error.message}
+      />
       <h1 className="text-[18px] font-semibold tracking-tight mb-6">Obras</h1>
       <div className="rounded border border-red-200 bg-red-50 p-6">
         <h2 className="text-lg font-semibold text-red-800">

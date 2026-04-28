@@ -2,11 +2,13 @@
 
 import Link from 'next/link'
 import type { Route } from 'next'
+import { useEffect, useRef } from 'react'
 import { useFormState, useFormStatus } from 'react-dom'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { useToast } from '@/components/ui/toast'
 import type { AuthActionState } from './actions'
 
 interface AuthFormProps {
@@ -37,6 +39,23 @@ export function AuthForm({
   action,
 }: AuthFormProps) {
   const [state, formAction] = useFormState(action, { error: undefined })
+  const { toast } = useToast()
+  const errorToastLocked = useRef(false)
+
+  useEffect(() => {
+    if (state.error && !errorToastLocked.current) {
+      errorToastLocked.current = true
+      toast({
+        variant: 'error',
+        title: 'No se pudo iniciar sesión',
+        description: state.error,
+      })
+    }
+
+    if (!state.error) {
+      errorToastLocked.current = false
+    }
+  }, [state.error, toast])
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50/70 px-6 py-8">
@@ -56,8 +75,6 @@ export function AuthForm({
             minLength={6}
             autoComplete="current-password"
           />
-
-          {state.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
 
           <SubmitButton label={submitLabel} />
         </form>

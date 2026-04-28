@@ -96,7 +96,6 @@ describe('/obra/[id] route integration', () => {
     render(page)
 
     expect(screen.getByText('Obra con error de dependencias')).toBeTruthy()
-    expect(screen.getByText('Dependencia circular detectada: A -> B -> A')).toBeTruthy()
     expect(screen.queryByText('Guardar cambios')).toBeNull()
   })
 

@@ -1,5 +1,6 @@
 import { AuthContextError, requireAuthContext } from '@/lib/auth/auth-context'
 import { redirect } from 'next/navigation'
+import { ToastOnMount } from '@/components/ui/toast-on-mount'
 
 import { saveTemplateAction, loadTemplateTasksAction } from './actions'
 import { TemplateEditor } from './template-editor'
@@ -42,9 +43,10 @@ export default async function AdminTemplatesPage({ searchParams }: TemplatesPage
           </div>
 
           {actionError ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {actionError}
-            </div>
+            <>
+              <ToastOnMount variant="error" title="No se pudo abrir la pantalla" description={actionError} />
+              <p className="text-sm text-red-700">{actionError}</p>
+            </>
           ) : null}
 
           <TemplateEditor saveAction={saveTemplateAction} loadTasksAction={loadTemplateTasksAction} />
@@ -60,12 +62,13 @@ export default async function AdminTemplatesPage({ searchParams }: TemplatesPage
       return (
         <main className="min-h-screen bg-slate-50/70 px-6 py-8">
           <div className="mx-auto max-w-7xl space-y-4">
+            <ToastOnMount
+              variant="error"
+              title="Sin membresía activa"
+              description="No tenés membresía activa en ningún proyecto."
+            />
             <h1 className="text-[40px] font-semibold tracking-tight text-slate-900">Gestión de Plantillas</h1>
-            {actionError ? (
-              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {actionError}
-              </div>
-            ) : null}
+            {actionError ? <p className="text-sm text-red-700">{actionError}</p> : null}
             <p className="text-gray-700">No tenés membresía activa en ningún proyecto.</p>
           </div>
         </main>
@@ -75,15 +78,14 @@ export default async function AdminTemplatesPage({ searchParams }: TemplatesPage
     return (
       <main className="min-h-screen bg-slate-50/70 px-6 py-8">
         <div className="mx-auto max-w-7xl space-y-4">
+          <ToastOnMount
+            variant="error"
+            title="Error cargando plantillas"
+            description={error instanceof Error ? error.message : 'Error inesperado'}
+          />
           <h1 className="text-[40px] font-semibold tracking-tight text-slate-900">Gestión de Plantillas</h1>
-          {actionError ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {actionError}
-            </div>
-          ) : null}
-          <p className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-red-600 shadow-sm">
-            Error: {error instanceof Error ? error.message : 'Error inesperado'}
-          </p>
+          {actionError ? <p className="text-sm text-red-700">{actionError}</p> : null}
+          <p className="text-red-600">Error: {error instanceof Error ? error.message : 'Error inesperado'}</p>
         </div>
       </main>
     )
