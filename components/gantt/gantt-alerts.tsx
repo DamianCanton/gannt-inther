@@ -39,7 +39,7 @@ export function GanttAlerts({
         <p
           role="status"
           aria-live="polite"
-          className="rounded border border-blue-200 bg-blue-50 p-2 text-sm text-blue-700"
+          className="rounded border border-accent/20 bg-accent/10 p-2 text-sm text-accent"
         >
           Guardando cambios en el cronograma...
         </p>

@@ -31,23 +31,25 @@ export default async function AdminTemplatesPage({ searchParams }: TemplatesPage
     await requireAuthContext()
 
     return (
-      <div className="p-8 max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-2">Gestión de Plantillas</h1>
-        <p className="text-gray-600 mb-6">
-          Definí las tareas preestablecidas para cada tipo de obra.
-        </p>
-
-        {actionError ? (
-          <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {actionError}
+      <main className="min-h-screen bg-slate-50/70 px-6 py-8">
+        <div className="mx-auto max-w-7xl space-y-6">
+          <div className="space-y-2">
+            <p className="text-[12px] uppercase tracking-wider text-gray-500">Administración</p>
+            <h1 className="text-[40px] font-semibold tracking-tight text-slate-900">Gestión de Plantillas</h1>
+            <p className="max-w-2xl text-sm text-gray-600">
+              Definí las tareas preestablecidas para cada tipo de obra.
+            </p>
           </div>
-        ) : null}
 
-        <TemplateEditor
-          saveAction={saveTemplateAction}
-          loadTasksAction={loadTemplateTasksAction}
-        />
-      </div>
+          {actionError ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {actionError}
+            </div>
+          ) : null}
+
+          <TemplateEditor saveAction={saveTemplateAction} loadTasksAction={loadTemplateTasksAction} />
+        </div>
+      </main>
     )
   } catch (error) {
     if (error instanceof AuthContextError && error.code === 'UNAUTHENTICATED') {
@@ -56,30 +58,34 @@ export default async function AdminTemplatesPage({ searchParams }: TemplatesPage
 
     if (error instanceof AuthContextError && error.code === 'NO_PROJECT_MEMBERSHIP') {
       return (
-        <div className="p-8">
-          <h1 className="text-2xl font-bold mb-4">Gestión de Plantillas</h1>
-          {actionError ? (
-            <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              {actionError}
-            </div>
-          ) : null}
-          <p className="text-gray-700">No tenés membresía activa en ningún proyecto.</p>
-        </div>
+        <main className="min-h-screen bg-slate-50/70 px-6 py-8">
+          <div className="mx-auto max-w-7xl space-y-4">
+            <h1 className="text-[40px] font-semibold tracking-tight text-slate-900">Gestión de Plantillas</h1>
+            {actionError ? (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {actionError}
+              </div>
+            ) : null}
+            <p className="text-gray-700">No tenés membresía activa en ningún proyecto.</p>
+          </div>
+        </main>
       )
     }
 
     return (
-      <div className="p-8">
-        <h1 className="text-2xl font-bold mb-4">Gestión de Plantillas</h1>
-        {actionError ? (
-          <div className="mb-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            {actionError}
-          </div>
-        ) : null}
-        <p className="text-red-600">
-          Error: {error instanceof Error ? error.message : 'Error inesperado'}
-        </p>
-      </div>
+      <main className="min-h-screen bg-slate-50/70 px-6 py-8">
+        <div className="mx-auto max-w-7xl space-y-4">
+          <h1 className="text-[40px] font-semibold tracking-tight text-slate-900">Gestión de Plantillas</h1>
+          {actionError ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {actionError}
+            </div>
+          ) : null}
+          <p className="rounded-xl border border-gray-200 bg-white px-4 py-3 text-red-600 shadow-sm">
+            Error: {error instanceof Error ? error.message : 'Error inesperado'}
+          </p>
+        </div>
+      </main>
     )
   }
 }

@@ -172,6 +172,8 @@ export async function changePassword(
     }
   }
 
+  revalidatePath('/perfil')
+
   return {
     error: undefined,
     success: 'Contraseña actualizada correctamente.',

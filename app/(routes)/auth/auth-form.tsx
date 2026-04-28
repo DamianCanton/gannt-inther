@@ -39,11 +39,14 @@ export function AuthForm({
   const [state, formAction] = useFormState(action, { error: undefined })
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+    <main className="flex min-h-screen items-center justify-center bg-slate-50/70 px-6 py-8">
+      <Card className="w-full max-w-md space-y-5">
+        <div className="space-y-2">
+          <p className="text-[12px] uppercase tracking-wider text-gray-500">INTHER Access</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">{title}</h1>
+        </div>
 
-        <form action={formAction} className="space-y-3">
+        <form action={formAction} className="space-y-4">
           <Input name="email" type="email" label="Email" required autoComplete="email" />
           <Input
             name="password"
@@ -61,7 +64,7 @@ export function AuthForm({
 
         <p className="text-sm text-gray-600">
           {alternateLabel}{' '}
-          <Link href={alternateHref} className="font-medium text-blue-600 hover:text-blue-700">
+          <Link href={alternateHref} className="font-medium text-accent hover:text-accent/80">
             {alternateCta}
           </Link>
         </p>

@@ -48,9 +48,9 @@ export function TimelineGrid({
         return (
           <div
             key={column.key}
-            className={`border border-gray-200 px-2 py-2 text-center text-xs font-medium ${
+              className={`border border-gray-200 px-2 py-2 text-center text-xs font-medium ${
               isToday
-                ? 'bg-blue-100 text-blue-800 font-semibold'
+                ? 'bg-accent/10 text-accent font-semibold'
                 : 'bg-gray-50 text-gray-600'
             }`}
           >
@@ -78,10 +78,10 @@ export function TimelineGrid({
               key={`${task.id}-${column.key}`}
               ref={cellRef as React.Ref<HTMLDivElement> | undefined}
               className={`min-h-[36px] border border-gray-200 px-1 py-1 transition-colors ${
-                isActive ? 'bg-blue-200' : ''
-              } ${isToday && !isActive ? 'bg-blue-50 today-marker' : ''} ${
-                isSelected && !isActive ? 'bg-blue-50/50' : ''
-              } ${isFirstCell ? 'cursor-pointer hover:bg-blue-50/30' : ''}`}
+                isActive ? 'bg-accent/20' : ''
+              } ${isToday && !isActive ? 'bg-accent/10 today-marker' : ''} ${
+                isSelected && !isActive ? 'bg-accent/10' : ''
+              } ${isFirstCell ? 'cursor-pointer hover:bg-accent/5' : ''}`}
               onClick={() => onSelectTask(task.id)}
               role="gridcell"
               aria-label={isActive ? `Barra de ${task.nombre}` : undefined}

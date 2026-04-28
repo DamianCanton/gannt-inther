@@ -1,5 +1,6 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { AuthContextError, requireAuthContext } from '@/lib/auth/auth-context'
@@ -68,6 +69,9 @@ export async function saveTemplateAction(formData: FormData): Promise<void> {
       tipoObra: tipoObra as TipoObra,
       tasks: validatedTasks,
     })
+
+    revalidatePath('/admin/templates')
+    revalidatePath('/obras')
   } catch (error) {
     if (error instanceof AuthContextError && error.code === 'UNAUTHENTICATED') {
       redirect('/auth/login')

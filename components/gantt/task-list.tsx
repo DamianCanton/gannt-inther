@@ -32,7 +32,7 @@ export function TaskList({ tasks, selectedTaskId, onSelectTask }: TaskListProps)
             type="button"
             variant={isSelected ? 'secondary' : 'ghost'}
             className={`flex h-full w-full flex-col items-start gap-0.5 rounded-none px-4 py-2 text-left ${
-              isSelected ? 'bg-blue-50' : ''
+              isSelected ? 'bg-accent/10' : ''
             }`}
             onClick={() => onSelectTask(task.id)}
           >

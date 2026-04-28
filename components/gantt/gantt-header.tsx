@@ -57,7 +57,7 @@ export function GanttHeader({
           <button
             type="button"
             onClick={onCreateTask}
-            className="inline-flex h-12 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className="inline-flex h-12 items-center gap-2 rounded-xl bg-accent px-4 text-sm font-medium text-white shadow-sm transition-colors hover:bg-accent/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
           >
             <Plus size={16} />
             Nueva tarea

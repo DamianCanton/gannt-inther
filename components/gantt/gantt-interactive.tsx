@@ -1,9 +1,11 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
-import { Search, SlidersHorizontal, X } from 'lucide-react'
+import { Search, SlidersHorizontal } from 'lucide-react'
 
+import { Drawer } from '@/components/ui/drawer'
 import { detectCycle } from '@/lib/gantt-dag'
 import type { IsoDate, PrintConfig, ScheduleTask, Uuid } from '@/types/gantt'
 
@@ -93,6 +95,7 @@ export function GanttInteractive({
   initialScheduleError = null,
   onMutateTask,
 }: GanttInteractiveProps) {
+  const router = useRouter()
   const [schedule, setSchedule] = useState<ScheduleTask[]>(initialSchedule)
   const [selectedTaskId, setSelectedTaskId] = useState<Uuid | null>(initialSchedule[0]?.id ?? null)
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -224,6 +227,7 @@ export function GanttInteractive({
         setSaveError(null)
         const stillSelected = result.schedule.find((task) => task.id === previousSelectedTaskId)
         setSelectedTaskId(stillSelected?.id ?? result.schedule.at(-1)?.id ?? result.schedule[0]?.id ?? null)
+        router.refresh()
       }
 
       return {}
@@ -311,7 +315,7 @@ export function GanttInteractive({
                     setTimelineMode(option.key)
                   }}
                   className={`rounded-xl px-4 py-2 text-sm font-medium transition-colors ${
-                    isActive ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                    isActive ? 'bg-accent text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
                   }`}
                   aria-pressed={isActive}
                 >
@@ -329,13 +333,13 @@ export function GanttInteractive({
             }}
             className={`inline-flex h-11 items-center gap-3 rounded-2xl border px-4 text-sm font-medium transition-colors ${
               showHolidays
-                ? 'border-blue-200 bg-blue-50 text-blue-700'
+                ? 'border-accent/20 bg-accent/10 text-accent'
                 : 'border-slate-200 bg-white text-slate-500'
             }`}
           >
             <span
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                showHolidays ? 'bg-blue-600' : 'bg-slate-300'
+                showHolidays ? 'bg-accent' : 'bg-slate-300'
               }`}
               aria-hidden="true"
             >
@@ -362,7 +366,7 @@ export function GanttInteractive({
                 onChange={(event) => {
                   updateFilter('query', event.target.value)
                 }}
-                className="h-11 w-64 rounded-2xl border border-slate-200 pl-10 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="h-11 w-64 rounded-2xl border border-slate-200 pl-10 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
               />
             </div>
             <button
@@ -375,7 +379,7 @@ export function GanttInteractive({
               <SlidersHorizontal size={16} />
               Filtros
               {hasActiveFilters ? (
-                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700">
+                <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-accent">
                   Activos
                 </span>
               ) : null}
@@ -403,7 +407,7 @@ export function GanttInteractive({
                 onChange={(event) => {
                   updateFilter('minDuration', event.target.value)
                 }}
-                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
               />
             </label>
             <label className="grid gap-1 text-sm font-medium text-slate-700">
@@ -415,7 +419,7 @@ export function GanttInteractive({
                 onChange={(event) => {
                   updateFilter('maxDuration', event.target.value)
                 }}
-                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
               />
             </label>
             <label className="grid gap-1 text-sm font-medium text-slate-700">
@@ -425,7 +429,7 @@ export function GanttInteractive({
                 onChange={(event) => {
                   updateFilter('dependencyMode', event.target.value as DependencyFilterMode)
                 }}
-                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
               >
                 <option value="all">Todas</option>
                 <option value="with-dependencies">Con dependencias</option>
@@ -440,7 +444,7 @@ export function GanttInteractive({
                 onChange={(event) => {
                   updateFilter('dateFrom', event.target.value)
                 }}
-                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
               />
             </label>
             <label className="grid gap-1 text-sm font-medium text-slate-700">
@@ -451,7 +455,7 @@ export function GanttInteractive({
                 onChange={(event) => {
                   updateFilter('dateTo', event.target.value)
                 }}
-                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40"
               />
             </label>
             <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700">
@@ -508,83 +512,69 @@ export function GanttInteractive({
 
       <GanttAlerts cycleWarning={cycleWarning} saveError={saveError} isMutating={isMutating} />
 
-      <div className={`grid gap-4 ${drawerOpen ? 'xl:grid-cols-[minmax(0,1fr)_340px]' : 'grid-cols-1'}`}>
-        <div className="min-w-0 space-y-3">
-          {schedule.length > 0 && visibleSchedule.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
-              No hay tareas que coincidan con los filtros activos.
-            </div>
+      <div className="min-w-0 space-y-3">
+        {schedule.length > 0 && visibleSchedule.length === 0 ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600 shadow-sm">
+            No hay tareas que coincidan con los filtros activos.
+          </div>
+        ) : (
+          <GanttGrid
+            tasks={visibleSchedule}
+            obraStartDate={obraStartDate}
+            selectedTaskId={selectedTaskId}
+            onSelectTask={handleSelectTask}
+            forcedScale={timelineMode === 'daily' ? 'daily' : 'weekly'}
+            showHolidays={showHolidays}
+          />
+        )}
+      </div>
+
+      <Drawer
+        open={drawerOpen}
+        onClose={() => {
+          setDrawerOpen(false)
+        }}
+        title={drawerMode === 'create' ? 'Nueva tarea' : 'Editar tarea'}
+      >
+        <div className="space-y-4">
+          {drawerMode === 'edit' && selectedTask ? (
+            <p className="text-sm font-medium text-gray-600">{selectedTask.nombre}</p>
+          ) : null}
+
+          <div className="inline-flex w-fit rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+            {drawerMode === 'create' ? 'Creación' : 'Edición'}
+          </div>
+
+          {drawerMode === 'create' ? (
+            <TaskEditor
+              mode="create"
+              tasks={schedule}
+              pending={isMutating}
+              error={saveError?.message ?? null}
+              onSubmit={handleSubmit}
+              onCancel={() => {
+                setSaveError(null)
+              }}
+            />
           ) : (
-            <GanttGrid
-              tasks={visibleSchedule}
-              obraStartDate={obraStartDate}
+            <TaskEditor
+              mode="edit"
+              tasks={schedule}
               selectedTaskId={selectedTaskId}
-              onSelectTask={handleSelectTask}
-              forcedScale={timelineMode === 'daily' ? 'daily' : 'weekly'}
-              showHolidays={showHolidays}
+              selectedTask={selectedTask}
+              pending={isMutating}
+              error={saveError?.message ?? null}
+              onSelectTask={(taskId) => {
+                setSelectedTaskId(taskId)
+              }}
+              onSubmit={handleSubmit}
+              onCancel={() => {
+                setSaveError(null)
+              }}
             />
           )}
         </div>
-
-        {drawerOpen ? (
-          <aside className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_18px_40px_-30px_rgba(15,23,42,0.45)]">
-            <div className="mb-3 space-y-2 border-b border-slate-100 pb-3">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="text-lg font-semibold text-slate-900">
-                  {drawerMode === 'create' ? 'Nueva tarea' : 'Editar tarea'}
-                </h2>
-                <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                    {drawerMode === 'create' ? 'Creación' : 'Edición'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDrawerOpen(false)
-                    }}
-                    className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
-                    aria-label="Cerrar panel lateral"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-              </div>
-              {drawerMode === 'edit' && selectedTask ? (
-                <p className="text-sm font-medium text-slate-600">{selectedTask.nombre}</p>
-              ) : null}
-            </div>
-
-            {drawerMode === 'create' ? (
-              <TaskEditor
-                mode="create"
-                tasks={schedule}
-                pending={isMutating}
-                error={saveError?.message ?? null}
-                onSubmit={handleSubmit}
-                onCancel={() => {
-                  setSaveError(null)
-                }}
-              />
-            ) : (
-              <TaskEditor
-                mode="edit"
-                tasks={schedule}
-                selectedTaskId={selectedTaskId}
-                selectedTask={selectedTask}
-                pending={isMutating}
-                error={saveError?.message ?? null}
-                onSelectTask={(taskId) => {
-                  setSelectedTaskId(taskId)
-                }}
-                onSubmit={handleSubmit}
-                onCancel={() => {
-                  setSaveError(null)
-                }}
-              />
-            )}
-          </aside>
-        ) : null}
-      </div>
+      </Drawer>
     </div>
   )
 }

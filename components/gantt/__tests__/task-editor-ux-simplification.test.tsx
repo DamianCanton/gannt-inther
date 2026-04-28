@@ -3,6 +3,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { ScheduleTask } from '@/types/gantt'
 
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    refresh: vi.fn(),
+  }),
+}))
+
 import { GanttInteractive } from '../gantt-interactive'
 import { TaskEditor } from '../task-editor'
 

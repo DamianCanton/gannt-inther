@@ -183,9 +183,9 @@ export function GanttGrid({
     cells.push(
       <div
         key={`hdr-${column.key}`}
-        className={`sticky top-0 z-20 border-b border-r border-slate-200 px-2 py-2 text-center text-xs font-medium ${
+          className={`sticky top-0 z-20 border-b border-r border-slate-200 px-2 py-2 text-center text-xs font-medium ${
           isToday
-            ? 'bg-blue-50 font-semibold text-blue-800'
+            ? 'bg-accent/10 font-semibold text-accent'
             : 'bg-white text-slate-600'
         }`}
         role="columnheader"
@@ -206,9 +206,9 @@ export function GanttGrid({
     cells.push(
       <div
         key={`label-${task.id}`}
-         className={`sticky left-0 z-10 flex cursor-pointer flex-col items-start justify-center border-b border-r border-slate-200 px-4 py-3 text-left ${
-           isSelected ? 'bg-blue-50/80 shadow-[inset_3px_0_0_0_#2563eb]' : 'bg-white'
-         } hover:bg-slate-50`}
+          className={`sticky left-0 z-10 flex cursor-pointer flex-col items-start justify-center border-b border-r border-slate-200 px-4 py-3 text-left ${
+            isSelected ? 'bg-accent/10 shadow-[inset_3px_0_0_0_#f69323]' : 'bg-white'
+          } hover:bg-slate-50`}
         onClick={() => onSelectTask(task.id)}
         role="button"
         tabIndex={0}
@@ -244,7 +244,7 @@ export function GanttGrid({
             key={`${task.id}-${column.key}`}
             className={`relative border-b border-r border-slate-200 transition-colors ${
               isWeekendColumn ? 'bg-slate-100' : 'bg-white'
-            } ${isToday && !isActive ? 'today-marker bg-blue-50' : ''} ${isSelected && !isActive ? 'bg-blue-50/30' : ''}`}
+             } ${isToday && !isActive ? 'today-marker bg-accent/10' : ''} ${isSelected && !isActive ? 'bg-accent/10' : ''}`}
             onClick={() => onSelectTask(task.id)}
             role="gridcell"
             aria-label={
@@ -256,8 +256,8 @@ export function GanttGrid({
             {isActive ? (
               <div
                  className={`mx-1 h-6 shadow-sm ${
-                   isSelected ? 'bg-blue-500 ring-2 ring-blue-700/80 ring-offset-0' : 'bg-blue-500/85'
-                 } ${isRangeStart ? 'rounded-l-full' : ''} ${isRangeEnd ? 'rounded-r-full' : ''}`}
+                    isSelected ? 'bg-accent ring-2 ring-accent/70 ring-offset-0' : 'bg-accent/85'
+                  } ${isRangeStart ? 'rounded-l-full' : ''} ${isRangeEnd ? 'rounded-r-full' : ''}`}
                />
             ) : null}
           </div>

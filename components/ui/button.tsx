@@ -8,7 +8,7 @@ function cn(...classes: (string | undefined | null | false)[]): string {
 }
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost'
+  variant?: 'default' | 'primary' | 'secondary' | 'ghost' | 'outline'
   size?: 'sm' | 'md' | 'lg'
 }
 
@@ -20,9 +20,11 @@ export function Button({
   ...props
 }: ButtonProps) {
   const variantClasses = {
-    primary: 'bg-primary text-white hover:bg-primary/90',
-    secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300',
-    ghost: 'bg-transparent text-primary hover:bg-primary/10',
+    default: 'bg-accent text-white hover:bg-accent/90',
+    primary: 'bg-accent text-white hover:bg-accent/90',
+    secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
+    ghost: 'bg-transparent text-gray-700 hover:bg-gray-100',
+    outline: 'border border-gray-200 bg-white text-gray-900 hover:bg-gray-50',
   }
 
   const sizeClasses = {
@@ -34,7 +36,7 @@ export function Button({
   return (
     <button
       className={cn(
-        'rounded font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
+        'rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-2',
         variantClasses[variant],
         sizeClasses[size],
         className

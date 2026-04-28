@@ -5,6 +5,7 @@ import { type FormEvent, useEffect, useId, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { HelpPopover } from '@/components/ui/help-popover'
 import { Input } from '@/components/ui/input'
+import { Select } from '@/components/ui/select'
 import { detectSmartInsertConflict, type SmartInsertConflict } from '@/lib/domain/smart-insert'
 import type { ScheduleTask, Uuid } from '@/types/gantt'
 
@@ -320,13 +321,13 @@ export function TaskEditor(props: TaskEditorProps) {
 
   return (
     <form
-      className="space-y-3 rounded border border-gray-200 bg-white p-4"
+      className="flex h-full flex-col space-y-4 rounded-xl border border-gray-200 bg-white p-5"
       onSubmit={submitForm}
       aria-busy={isPending}
     >
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Editor de tarea</h2>
+          <h2 className="text-[18px] font-semibold tracking-tight text-gray-900">Editor de tarea</h2>
           <p className="text-sm text-gray-500">Primero resolvé nombre, duración y dependencia para planificar la tarea.</p>
         </div>
         <Button
@@ -344,7 +345,7 @@ export function TaskEditor(props: TaskEditorProps) {
       </div>
 
       <fieldset className="space-y-2">
-        <legend className="text-sm font-medium text-gray-700">Acción</legend>
+        <legend className="text-[12px] uppercase tracking-wider text-gray-500">Acción</legend>
         <div className="flex flex-wrap gap-2">
           {(['create', 'update', 'delete'] as const).map((modeOption) => (
             <Button
@@ -361,10 +362,10 @@ export function TaskEditor(props: TaskEditorProps) {
       </fieldset>
 
       {intent !== 'create' ? (
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-[12px] uppercase tracking-wider text-gray-500">
           Tarea
           <select
-            className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+            className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-[13px] text-gray-900 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:border-accent"
             value={selectedTaskId ?? ''}
             onChange={(event) => handleSelectTask(event.target.value)}
             disabled={disabled || isPending}
@@ -380,9 +381,9 @@ export function TaskEditor(props: TaskEditorProps) {
       ) : null}
 
       {intent !== 'delete' ? (
-        <div className="space-y-1.5 rounded-lg border border-gray-200 bg-gray-50/60 p-3">
-          <div className="mb-1 flex items-center gap-1.5">
-            <label htmlFor={nameInputId} className="text-sm font-medium text-gray-700">
+        <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50/60 p-4">
+          <div className="flex items-center gap-1.5">
+            <label htmlFor={nameInputId} className="text-[12px] uppercase tracking-wider text-gray-500">
               Nombre
             </label>
             <HelpPopover
@@ -402,9 +403,9 @@ export function TaskEditor(props: TaskEditorProps) {
       ) : null}
 
       {intent !== 'delete' ? (
-        <div className="space-y-1.5 rounded-lg border border-gray-200 bg-white p-3">
-          <div className="mb-1 flex items-center gap-1.5">
-            <label htmlFor={durationInputId} className="text-sm font-medium text-gray-700">
+        <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-4">
+          <div className="flex items-center gap-1.5">
+            <label htmlFor={durationInputId} className="text-[12px] uppercase tracking-wider text-gray-500">
               Duración (días hábiles)
             </label>
             <HelpPopover
@@ -426,17 +427,17 @@ export function TaskEditor(props: TaskEditorProps) {
       ) : null}
 
       {intent !== 'delete' ? (
-        <div className="space-y-1.5 rounded-lg border border-gray-200 bg-slate-50 p-3">
-          <label htmlFor={dependencyInputId} className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
+        <div className="space-y-4 rounded-lg border border-gray-200 bg-slate-50 p-4">
+          <label htmlFor={dependencyInputId} className="flex items-center gap-1.5 text-[12px] uppercase tracking-wider text-gray-500">
             Dependencia
             <HelpPopover
               label="Ayuda para Dependencia"
               content="¿De qué otra tarea depende para poder arrancar?"
             />
           </label>
-          <select
+          <Select
             id={dependencyInputId}
-            className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+            className="mt-1 w-full"
             value={dependeDeId}
             onChange={(event) => setDependeDeId(event.target.value)}
             disabled={disabled || isPending || (intent !== 'create' && !selectedTask)}
@@ -447,7 +448,7 @@ export function TaskEditor(props: TaskEditorProps) {
                 {task.nombre}
               </option>
             ))}
-          </select>
+          </Select>
           <p className="text-xs text-gray-600">Podés dejarla sin dependencia si debe arrancar al inicio del proyecto.</p>
         </div>
       ) : null}
@@ -465,7 +466,7 @@ export function TaskEditor(props: TaskEditorProps) {
       ) : null}
 
       {isPending ? (
-        <p role="status" aria-live="polite" className="text-sm text-blue-700">
+        <p role="status" aria-live="polite" className="text-sm text-accent">
           {intent === 'create'
             ? 'Creando tarea...'
             : intent === 'update'
@@ -476,20 +477,27 @@ export function TaskEditor(props: TaskEditorProps) {
 
       {mergedError ? <p className="text-sm text-red-600">{mergedError}</p> : null}
 
-      <Button
-        type="submit"
-        disabled={
-          disabled || isPending || (intent !== 'create' && !selectedTask) || (intent === 'delete' && !confirmDelete)
-        }
-      >
-        {isPending
-          ? intent === 'create'
-            ? 'Creando...'
-            : intent === 'update'
-              ? 'Guardando...'
-              : 'Eliminando...'
-          : getSubmitLabel(intent)}
-      </Button>
+      <div className="flex justify-end gap-2 border-t border-gray-100 pt-4">
+        {onCancel ? (
+          <Button type="button" variant="secondary" onClick={onCancel} disabled={disabled || isPending}>
+            Cancelar
+          </Button>
+        ) : null}
+        <Button
+          type="submit"
+          disabled={
+            disabled || isPending || (intent !== 'create' && !selectedTask) || (intent === 'delete' && !confirmDelete)
+          }
+        >
+          {isPending
+            ? intent === 'create'
+              ? 'Creando...'
+              : intent === 'update'
+                ? 'Guardando...'
+                : 'Eliminando...'
+            : getSubmitLabel(intent)}
+        </Button>
+      </div>
 
       {pendingConflict ? (
         <SmartInsertModal
