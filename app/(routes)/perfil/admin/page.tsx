@@ -4,7 +4,11 @@ import { redirect } from 'next/navigation'
 import { AuthContextError } from '@/lib/auth/auth-context'
 import { requireAdmin } from '@/lib/auth/guards'
 
-const sections = [
+const sections: Array<{
+  href: '/perfil/admin/usuarios' | '/perfil/admin/templates'
+  title: string
+  description: string
+}> = [
   {
     href: '/perfil/admin/usuarios',
     title: 'Usuarios',

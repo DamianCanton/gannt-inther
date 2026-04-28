@@ -11,15 +11,10 @@ vi.mock('next/link', () => ({
   ),
 }))
 
-vi.mock('react-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-dom')>('react-dom')
-
-  return {
-    ...actual,
-    useFormState: (action: unknown, initialState: unknown) => [initialState, action],
-    useFormStatus: () => ({ pending: false }),
-  }
-})
+vi.mock('react-dom', () => ({
+  useFormState: (action: unknown, initialState: unknown) => [initialState, action],
+  useFormStatus: () => ({ pending: false }),
+}))
 
 vi.mock('@/lib/actions/perfil', () => ({
   changePassword: vi.fn(),
