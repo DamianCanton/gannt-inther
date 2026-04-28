@@ -2,6 +2,10 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Sidebar, SidebarToggle } from '@/components/ui/sidebar';
 
+const { signoutMock } = vi.hoisted(() => ({
+  signoutMock: vi.fn(),
+}));
+
 // Mock next/link
 vi.mock('next/link', () => ({
   default: ({ href, children, ...props }: any) => (
@@ -15,6 +19,10 @@ vi.mock('next/link', () => ({
 const mockPathname = vi.fn(() => '/obras');
 vi.mock('next/navigation', () => ({
   usePathname: () => mockPathname(),
+}));
+
+vi.mock('@/lib/actions/perfil', () => ({
+  signout: signoutMock,
 }));
 
 describe('Sidebar', () => {
@@ -61,6 +69,14 @@ describe('Sidebar', () => {
 
     expect(screen.getByText('Volver')).toBeTruthy();
     expect(screen.getByText('Cerrar sesión')).toBeTruthy();
+  });
+
+  it('calls server signout action when clicking Cerrar sesión', () => {
+    render(<Sidebar isOpen={true} onClose={vi.fn()} />);
+
+    fireEvent.click(screen.getByText('Cerrar sesión'));
+
+    expect(signoutMock).toHaveBeenCalledTimes(1);
   });
 
   it('calls onClose when close button is clicked', () => {
