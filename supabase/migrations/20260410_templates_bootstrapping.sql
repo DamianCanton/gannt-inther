@@ -8,7 +8,7 @@
 create table if not exists public.template_tareas (
   id uuid primary key default gen_random_uuid(),
   project_id uuid not null,
-  tipo_obra text not null check (tipo_obra in ('Tipo A', 'Tipo B', 'Tipo C')),
+  tipo_obra text not null check (tipo_obra in ('SPLIT', 'OTM', 'Respaldo')),
   version integer not null default 1,
   status text not null default 'draft' check (status in ('draft', 'published', 'archived')),
   nombre text not null,
@@ -173,15 +173,15 @@ declare
 begin
   -- Task 1: Preparación del terreno
   insert into public.template_tareas (id, project_id, tipo_obra, version, status, nombre, duracion_dias, depende_de_template_id, orden)
-  values (v_a1_id, v_project_id, 'Tipo A', 1, 'published', 'Preparación del terreno', 5, null, 1);
+  values (v_a1_id, v_project_id, 'SPLIT', 1, 'published', 'Preparación del terreno', 5, null, 1);
 
   -- Task 2: Estructura principal
   insert into public.template_tareas (id, project_id, tipo_obra, version, status, nombre, duracion_dias, depende_de_template_id, orden)
-  values (v_a2_id, v_project_id, 'Tipo A', 1, 'published', 'Estructura principal', 10, v_a1_id, 2);
+  values (v_a2_id, v_project_id, 'SPLIT', 1, 'published', 'Estructura principal', 10, v_a1_id, 2);
 
   -- Task 3: Acabados finales
   insert into public.template_tareas (id, project_id, tipo_obra, version, status, nombre, duracion_dias, depende_de_template_id, orden)
-  values (v_a3_id, v_project_id, 'Tipo A', 1, 'published', 'Acabados finales', 7, v_a2_id, 3);
+  values (v_a3_id, v_project_id, 'SPLIT', 1, 'published', 'Acabados finales', 7, v_a2_id, 3);
 end $$;
 
 -- ============================================================
@@ -200,25 +200,25 @@ declare
 begin
   -- Task 1: Excavación y cimentación
   insert into public.template_tareas (id, project_id, tipo_obra, version, status, nombre, duracion_dias, depende_de_template_id, orden)
-  values (v_b1_id, v_project_id, 'Tipo B', 1, 'published', 'Excavación y cimentación', 7, null, 1);
+  values (v_b1_id, v_project_id, 'OTM', 1, 'published', 'Excavación y cimentación', 7, null, 1);
 
   -- Task 2: Estructura metálica (depends on B1)
   insert into public.template_tareas (id, project_id, tipo_obra, version, status, nombre, duracion_dias, depende_de_template_id, orden)
-  values (v_b2_id, v_project_id, 'Tipo B', 1, 'published', 'Estructura metálica', 12, v_b1_id, 2);
+  values (v_b2_id, v_project_id, 'OTM', 1, 'published', 'Estructura metálica', 12, v_b1_id, 2);
 
   -- Task 3: Instalaciones eléctricas (depends on B1, parallel to B2)
   insert into public.template_tareas (id, project_id, tipo_obra, version, status, nombre, duracion_dias, depende_de_template_id, orden)
-  values (v_b3_id, v_project_id, 'Tipo B', 1, 'published', 'Instalaciones eléctricas', 8, v_b1_id, 3);
+  values (v_b3_id, v_project_id, 'OTM', 1, 'published', 'Instalaciones eléctricas', 8, v_b1_id, 3);
 
   -- Task 4: Revestimientos (depends on both B2 and B3 — merge point)
   -- Note: Only ONE depende_de_id is allowed per row. We model the merge via dependencias table.
   -- For simplicity in template, we link to the longer path (B2).
   insert into public.template_tareas (id, project_id, tipo_obra, version, status, nombre, duracion_dias, depende_de_template_id, orden)
-  values (v_b4_id, v_project_id, 'Tipo B', 1, 'published', 'Revestimientos', 10, v_b2_id, 4);
+  values (v_b4_id, v_project_id, 'OTM', 1, 'published', 'Revestimientos', 10, v_b2_id, 4);
 
   -- Task 5: Inspección final
   insert into public.template_tareas (id, project_id, tipo_obra, version, status, nombre, duracion_dias, depende_de_template_id, orden)
-  values (v_b5_id, v_project_id, 'Tipo B', 1, 'published', 'Inspección final', 3, v_b4_id, 5);
+  values (v_b5_id, v_project_id, 'OTM', 1, 'published', 'Inspección final', 3, v_b4_id, 5);
 end $$;
 
 -- ============================================================
@@ -241,33 +241,33 @@ declare
 begin
   -- Task 1: Demolición y limpieza
   insert into public.template_tareas (id, project_id, tipo_obra, version, status, nombre, duracion_dias, depende_de_template_id, orden)
-  values (v_c1_id, v_project_id, 'Tipo C', 1, 'published', 'Demolición y limpieza', 4, null, 1);
+  values (v_c1_id, v_project_id, 'Respaldo', 1, 'published', 'Demolición y limpieza', 4, null, 1);
 
   -- Task 2: Cimentación profunda (depends on C1)
   insert into public.template_tareas (id, project_id, tipo_obra, version, status, nombre, duracion_dias, depende_de_template_id, orden)
-  values (v_c2_id, v_project_id, 'Tipo C', 1, 'published', 'Cimentación profunda', 14, v_c1_id, 2);
+  values (v_c2_id, v_project_id, 'Respaldo', 1, 'published', 'Cimentación profunda', 14, v_c1_id, 2);
 
   -- Task 3: Estructura de hormigón (depends on C1)
   insert into public.template_tareas (id, project_id, tipo_obra, version, status, nombre, duracion_dias, depende_de_template_id, orden)
-  values (v_c3_id, v_project_id, 'Tipo C', 1, 'published', 'Estructura de hormigón', 20, v_c1_id, 3);
+  values (v_c3_id, v_project_id, 'Respaldo', 1, 'published', 'Estructura de hormigón', 20, v_c1_id, 3);
 
   -- Task 4: Impermeabilización (depends on C1)
   insert into public.template_tareas (id, project_id, tipo_obra, version, status, nombre, duracion_dias, depende_de_template_id, orden)
-  values (v_c4_id, v_project_id, 'Tipo C', 1, 'published', 'Impermeabilización', 6, v_c1_id, 4);
+  values (v_c4_id, v_project_id, 'Respaldo', 1, 'published', 'Impermeabilización', 6, v_c1_id, 4);
 
   -- Task 5: Instalación mecánica (depends on C2)
   insert into public.template_tareas (id, project_id, tipo_obra, version, status, nombre, duracion_dias, depende_de_template_id, orden)
-  values (v_c5_id, v_project_id, 'Tipo C', 1, 'published', 'Instalación mecánica', 10, v_c2_id, 5);
+  values (v_c5_id, v_project_id, 'Respaldo', 1, 'published', 'Instalación mecánica', 10, v_c2_id, 5);
 
   -- Task 6: Aislamiento térmico (depends on C3)
   insert into public.template_tareas (id, project_id, tipo_obra, version, status, nombre, duracion_dias, depende_de_template_id, orden)
-  values (v_c6_id, v_project_id, 'Tipo C', 1, 'published', 'Aislamiento térmico', 5, v_c3_id, 6);
+  values (v_c6_id, v_project_id, 'Respaldo', 1, 'published', 'Aislamiento térmico', 5, v_c3_id, 6);
 
   -- Task 7: Fachada exterior (depends on C5 — main path merge)
   insert into public.template_tareas (id, project_id, tipo_obra, version, status, nombre, duracion_dias, depende_de_template_id, orden)
-  values (v_c7_id, v_project_id, 'Tipo C', 1, 'published', 'Fachada exterior', 12, v_c5_id, 7);
+  values (v_c7_id, v_project_id, 'Respaldo', 1, 'published', 'Fachada exterior', 12, v_c5_id, 7);
 
   -- Task 8: Entrega y documentación (depends on C7)
   insert into public.template_tareas (id, project_id, tipo_obra, version, status, nombre, duracion_dias, depende_de_template_id, orden)
-  values (v_c8_id, v_project_id, 'Tipo C', 1, 'published', 'Entrega y documentación', 4, v_c7_id, 8);
+  values (v_c8_id, v_project_id, 'Respaldo', 1, 'published', 'Entrega y documentación', 4, v_c7_id, 8);
 end $$;

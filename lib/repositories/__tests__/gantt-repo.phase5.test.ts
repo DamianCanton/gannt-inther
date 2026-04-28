@@ -76,7 +76,7 @@ describe('gantt-repo phase 5 methods', () => {
       input: {
         nombre: 'Obra Norte',
         cliente: 'Cliente SA',
-        tipoObra: 'Tipo A',
+        tipoObra: 'SPLIT',
         fechaInicioGlobal: '2026-04-06',
         vigenciaTexto: null,
       },

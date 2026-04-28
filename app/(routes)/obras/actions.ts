@@ -110,7 +110,7 @@ export async function createObraAction(formData: FormData): Promise<ActionRespon
     return { success: false, error: 'VALIDATION_ERROR' }
   }
 
-  if (tipoObra !== 'Tipo A' && tipoObra !== 'Tipo B' && tipoObra !== 'Tipo C') {
+  if (tipoObra !== 'SPLIT' && tipoObra !== 'OTM' && tipoObra !== 'Respaldo') {
     return { success: false, error: 'VALIDATION_ERROR' }
   }
 

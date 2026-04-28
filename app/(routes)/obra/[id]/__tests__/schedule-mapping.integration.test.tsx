@@ -15,7 +15,7 @@ const repoLikeSchedule: ObraSchedule = {
     projectId: 'p1',
     nombre: 'Obra Integración',
     cliente: null,
-    tipoObra: 'Tipo A',
+    tipoObra: 'SPLIT',
     fechaInicioGlobal: '2026-04-06',
     vigenciaTexto: null,
   },

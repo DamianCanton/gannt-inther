@@ -16,7 +16,7 @@ create table if not exists public.obras (
   project_id uuid not null,
   nombre text not null,
   cliente text,
-  tipo_obra text not null check (tipo_obra in ('Tipo A', 'Tipo B', 'Tipo C')),
+  tipo_obra text not null check (tipo_obra in ('SPLIT', 'OTM', 'Respaldo')),
   fecha_inicio_global date not null,
   vigencia_texto text,
   created_at timestamptz not null default now(),

@@ -91,7 +91,7 @@ describe('TemplateRepo — createObraFromTemplate RPC', () => {
       projectId: 'proj-1',
       nombre: 'Obra Norte',
       cliente: 'Cliente SA',
-      tipoObra: 'Tipo A' as TipoObra,
+      tipoObra: 'SPLIT' as TipoObra,
       fechaInicioGlobal: '2026-04-06',
       vigenciaTexto: '2026-12-31',
       tareas,
@@ -102,7 +102,7 @@ describe('TemplateRepo — createObraFromTemplate RPC', () => {
       p_project_id: 'proj-1',
       p_nombre: 'Obra Norte',
       p_cliente: 'Cliente SA',
-      p_tipo_obra: 'Tipo A',
+      p_tipo_obra: 'SPLIT',
       p_fecha_inicio_global: '2026-04-06',
       p_vigencia_texto: '2026-12-31',
       p_tareas: expect.arrayContaining([
@@ -138,7 +138,7 @@ describe('TemplateRepo — createObraFromTemplate RPC', () => {
         projectId: 'proj-1',
         nombre: 'Obra',
         cliente: null,
-        tipoObra: 'Tipo A' as TipoObra,
+        tipoObra: 'SPLIT' as TipoObra,
         fechaInicioGlobal: '2026-04-06',
         vigenciaTexto: null,
         tareas: [makeBootstrapTarea()],
@@ -155,7 +155,7 @@ describe('TemplateRepo — createObraFromTemplate RPC', () => {
         projectId: 'proj-1',
         nombre: 'Obra',
         cliente: null,
-        tipoObra: 'Tipo A' as TipoObra,
+        tipoObra: 'SPLIT' as TipoObra,
         fechaInicioGlobal: '2026-04-06',
         vigenciaTexto: null,
         tareas: [makeBootstrapTarea()],
@@ -172,7 +172,7 @@ describe('TemplateRepo — createObraFromTemplate RPC', () => {
         projectId: 'proj-1',
         nombre: 'Obra',
         cliente: null,
-        tipoObra: 'Tipo A' as TipoObra,
+        tipoObra: 'SPLIT' as TipoObra,
         fechaInicioGlobal: '2026-04-06',
         vigenciaTexto: null,
         tareas: [makeBootstrapTarea({ duracionDias: 0 })],
@@ -189,7 +189,7 @@ describe('TemplateRepo — createObraFromTemplate RPC', () => {
         projectId: 'proj-1',
         nombre: 'Obra',
         cliente: null,
-        tipoObra: 'Tipo A' as TipoObra,
+        tipoObra: 'SPLIT' as TipoObra,
         fechaInicioGlobal: '2026-04-06',
         vigenciaTexto: null,
         tareas: [makeBootstrapTarea({ duracionDias: NaN as unknown as number })],
@@ -206,7 +206,7 @@ describe('TemplateRepo — createObraFromTemplate RPC', () => {
         projectId: 'proj-1',
         nombre: 'Obra',
         cliente: null,
-        tipoObra: 'Tipo A' as TipoObra,
+        tipoObra: 'SPLIT' as TipoObra,
         fechaInicioGlobal: '2026-04-06',
         vigenciaTexto: null,
         tareas: [makeBootstrapTarea({ duracionDias: -1 })],
@@ -226,7 +226,7 @@ describe('TemplateRepo — getActiveTemplate fallback', () => {
       {
         id: 'task-1',
         project_id: 'proj-real',
-        tipo_obra: 'Tipo A',
+        tipo_obra: 'SPLIT',
         version: 1,
         status: 'published',
         nombre: 'Mi tarea',
@@ -240,7 +240,7 @@ describe('TemplateRepo — getActiveTemplate fallback', () => {
 
     const result = await repo.getActiveTemplate({
       projectId: 'proj-real' as never,
-      tipoObra: 'Tipo A' as TipoObra,
+      tipoObra: 'SPLIT' as TipoObra,
     })
 
     expect(result).toHaveLength(1)
@@ -253,7 +253,7 @@ describe('TemplateRepo — getActiveTemplate fallback', () => {
       {
         id: 'sentinel-1',
         project_id: '00000000-0000-0000-0000-000000000000',
-        tipo_obra: 'Tipo A',
+        tipo_obra: 'SPLIT',
         version: 1,
         status: 'published',
         nombre: 'Default task',
@@ -293,7 +293,7 @@ describe('TemplateRepo — getActiveTemplate fallback', () => {
     const repo = new TemplateRepo(supabase as never)
     const result = await repo.getActiveTemplate({
       projectId: 'proj-without-template' as never,
-      tipoObra: 'Tipo A' as TipoObra,
+      tipoObra: 'SPLIT' as TipoObra,
     })
 
     expect(result).toHaveLength(1)
@@ -306,7 +306,7 @@ describe('TemplateRepo — getActiveTemplate fallback', () => {
 
     const result = await repo.getActiveTemplate({
       projectId: 'proj-empty' as never,
-      tipoObra: 'Tipo C' as TipoObra,
+      tipoObra: 'Respaldo' as TipoObra,
     })
 
     expect(result).toEqual([])
@@ -319,7 +319,7 @@ describe('TemplateRepo — getActiveTemplate fallback', () => {
     await expect(
       repo.getActiveTemplate({
         projectId: 'proj-1' as never,
-        tipoObra: 'Tipo A' as TipoObra,
+        tipoObra: 'SPLIT' as TipoObra,
       })
     ).rejects.toThrow('connection refused')
   })

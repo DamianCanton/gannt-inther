@@ -25,7 +25,7 @@ export async function saveTemplateAction(formData: FormData): Promise<void> {
     redirectWithError('VALIDATION_ERROR')
   }
 
-  if (tipoObra !== 'Tipo A' && tipoObra !== 'Tipo B' && tipoObra !== 'Tipo C') {
+  if (tipoObra !== 'SPLIT' && tipoObra !== 'OTM' && tipoObra !== 'Respaldo') {
     redirectWithError('VALIDATION_ERROR')
   }
 

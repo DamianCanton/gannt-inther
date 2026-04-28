@@ -47,7 +47,7 @@ function validateDraft(tasks: TemplateTask[]): string | null {
 }
 
 export function TemplateEditor({ saveAction, loadTasksAction }: TemplateEditorProps) {
-  const [selectedType, setSelectedType] = useState<TipoObra>('Tipo A')
+  const [selectedType, setSelectedType] = useState<TipoObra>('SPLIT')
   const [tasks, setTasks] = useState<TemplateTask[]>([createEmptyTask(0)])
   const [validationError, setValidationError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -141,7 +141,7 @@ export function TemplateEditor({ saveAction, loadTasksAction }: TemplateEditorPr
     <div className="space-y-6">
       <Card className="space-y-4">
         <div className="flex flex-wrap gap-2">
-          {(['Tipo A', 'Tipo B', 'Tipo C'] as TipoObra[]).map((tipo) => (
+          {(['SPLIT', 'OTM', 'Respaldo'] as TipoObra[]).map((tipo) => (
             <Button
               key={tipo}
               variant={selectedType === tipo ? 'default' : 'secondary'}

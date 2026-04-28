@@ -7,7 +7,7 @@ function makeTemplateTarea(overrides: Partial<TemplateTarea> = {}): TemplateTare
   return {
     id: overrides.id ?? ('tmpl-' + Math.random().toString(36).slice(2)),
     projectId: overrides.projectId ?? '00000000-0000-0000-0000-000000000000',
-    tipoObra: overrides.tipoObra ?? 'Tipo A',
+    tipoObra: overrides.tipoObra ?? 'SPLIT',
     version: overrides.version ?? 1,
     status: overrides.status ?? 'published',
     nombre: overrides.nombre ?? 'Tarea',

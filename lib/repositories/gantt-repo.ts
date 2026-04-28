@@ -47,7 +47,7 @@ type DbObraRow = {
   project_id: string;
   nombre: string;
   cliente: string | null;
-  tipo_obra: "Tipo A" | "Tipo B" | "Tipo C";
+  tipo_obra: "SPLIT" | "OTM" | "Respaldo";
   fecha_inicio_global: string;
   vigencia_texto: string | null;
 };
@@ -70,7 +70,7 @@ type MutateTaskGraphPayload = {
 type CreateObraInput = {
   nombre: string;
   cliente: string | null;
-  tipoObra: "Tipo A" | "Tipo B" | "Tipo C";
+  tipoObra: "SPLIT" | "OTM" | "Respaldo";
   fechaInicioGlobal: IsoDate;
   vigenciaTexto: string | null;
 };

@@ -67,7 +67,7 @@ describe('obras actions', () => {
         {
           id: 'tmpl-1',
           projectId: '00000000-0000-0000-0000-000000000000',
-          tipoObra: 'Tipo A',
+          tipoObra: 'SPLIT',
           version: 1,
           status: 'published',
           nombre: 'Tarea A',
@@ -80,7 +80,7 @@ describe('obras actions', () => {
 
       const formData = new FormData()
       formData.set('nombre', 'Obra nueva')
-      formData.set('tipoObra', 'Tipo A')
+      formData.set('tipoObra', 'SPLIT')
       formData.set('fechaInicioGlobal', '2026-04-06')
 
       const result = await createObraAction(formData)
@@ -91,7 +91,7 @@ describe('obras actions', () => {
         expect.objectContaining({
           projectId: 'project-auth',
           nombre: 'Obra Nueva',
-          tipoObra: 'Tipo A',
+          tipoObra: 'SPLIT',
         })
       )
     })
@@ -103,7 +103,7 @@ describe('obras actions', () => {
 
       const formData = new FormData()
       formData.set('nombre', 'Obra nueva')
-      formData.set('tipoObra', 'Tipo A')
+      formData.set('tipoObra', 'SPLIT')
       formData.set('fechaInicioGlobal', '2026-04-06')
 
       const result = await createObraAction(formData)
@@ -129,7 +129,7 @@ describe('obras actions', () => {
 
       const formData = new FormData()
       formData.set('nombre', 'Obra nueva')
-      formData.set('tipoObra', 'Tipo A')
+      formData.set('tipoObra', 'SPLIT')
       formData.set('fechaInicioGlobal', '2026-04-06')
 
       const result = await createObraAction(formData)

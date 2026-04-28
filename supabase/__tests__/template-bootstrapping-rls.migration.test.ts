@@ -65,9 +65,9 @@ describe('RLS evidence: sentinel templates are read-only', () => {
     expect(sql).toContain("v_project_id uuid := '00000000-0000-0000-0000-000000000000'")
 
     // Verify all three types are seeded
-    expect(sql).toContain("'Tipo A'")
-    expect(sql).toContain("'Tipo B'")
-    expect(sql).toContain("'Tipo C'")
+    expect(sql).toContain("'SPLIT'")
+    expect(sql).toContain("'OTM'")
+    expect(sql).toContain("'Respaldo'")
   })
 
   // ── Sentinel fix migration (SELECT policy update) ──────────────

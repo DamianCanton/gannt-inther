@@ -45,7 +45,7 @@ function createScheduleFixture(projectId = 'p-auth', obraId = 'o1'): ObraSchedul
       projectId,
       nombre: 'Obra',
       cliente: null,
-      tipoObra: 'Tipo A',
+      tipoObra: 'SPLIT',
       fechaInicioGlobal: '2026-04-06',
       vigenciaTexto: null,
     },

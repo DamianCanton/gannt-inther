@@ -23,7 +23,7 @@ const makeSchedule = (tasks: TaskInput[]): ObraSchedule => ({
     projectId: 'p1',
     nombre: 'Obra 1',
     cliente: null,
-    tipoObra: 'Tipo A',
+    tipoObra: 'SPLIT',
     fechaInicioGlobal: '2026-04-06',
     vigenciaTexto: null,
   },

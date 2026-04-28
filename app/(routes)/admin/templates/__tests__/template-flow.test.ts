@@ -94,7 +94,7 @@ describe('E2E-lite: Template → Obra bootstrap flow', () => {
     const { supabase, store } = buildInMemorySupabase()
     const repo = new TemplateRepo(supabase as never)
     const projectId = 'proj-flow-1' as Uuid
-    const tipoObra = 'Tipo A' as TipoObra
+    const tipoObra = 'SPLIT' as TipoObra
 
     // ── Step 1: Save template (linear chain: A1 → A2 → A3) ─────
     await repo.saveActiveTemplate({
@@ -168,12 +168,12 @@ describe('E2E-lite: Template → Obra bootstrap flow', () => {
   })
 
   it('falls back to sentinel when project has no template, then creates obra', async () => {
-    // Sentinel store holds default Tipo B tasks with dependency chain
+    // Sentinel store holds default OTM tasks with dependency chain
     const sentinelRows: StoredRow[] = [
       {
         id: 'sent-b1',
         project_id: '00000000-0000-0000-0000-000000000000',
-        tipo_obra: 'Tipo B',
+        tipo_obra: 'OTM',
         version: 1,
         status: 'published',
         nombre: 'Excavación',
@@ -184,7 +184,7 @@ describe('E2E-lite: Template → Obra bootstrap flow', () => {
       {
         id: 'sent-b2',
         project_id: '00000000-0000-0000-0000-000000000000',
-        tipo_obra: 'Tipo B',
+        tipo_obra: 'OTM',
         version: 1,
         status: 'published',
         nombre: 'Estructura metálica',
@@ -230,7 +230,7 @@ describe('E2E-lite: Template → Obra bootstrap flow', () => {
     // Load from sentinel fallback
     const loaded = await repo.getActiveTemplate({
       projectId: 'proj-new' as Uuid,
-      tipoObra: 'Tipo B' as TipoObra,
+      tipoObra: 'OTM' as TipoObra,
     })
 
     expect(loaded).toHaveLength(2)
@@ -245,7 +245,7 @@ describe('E2E-lite: Template → Obra bootstrap flow', () => {
       projectId: 'proj-new' as Uuid,
       nombre: 'Obra from Sentinel',
       cliente: null,
-      tipoObra: 'Tipo B' as TipoObra,
+      tipoObra: 'OTM' as TipoObra,
       fechaInicioGlobal: '2026-05-01',
       vigenciaTexto: null,
       tareas: bootstrapTareas,

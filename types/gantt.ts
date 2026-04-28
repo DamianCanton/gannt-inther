@@ -47,7 +47,7 @@ export interface ObraInput {
   projectId: Uuid;
   nombre: string;
   cliente: string | null;
-  tipoObra: "Tipo A" | "Tipo B" | "Tipo C";
+  tipoObra: "SPLIT" | "OTM" | "Respaldo";
   fechaInicioGlobal: IsoDate;
   vigenciaTexto: string | null;
 }
@@ -61,7 +61,7 @@ export interface ObraDTO {
   projectId: Uuid;
   nombre: string;
   cliente: string | null;
-  tipoObra: "Tipo A" | "Tipo B" | "Tipo C";
+  tipoObra: "SPLIT" | "OTM" | "Respaldo";
   fechaInicioGlobal: IsoDate;
   vigenciaTexto: string | null;
   taskCount: number;
@@ -116,7 +116,7 @@ export interface PrintTaskPayload {
 // Template types
 // ============================================================
 
-export type TipoObra = "Tipo A" | "Tipo B" | "Tipo C";
+export type TipoObra = "SPLIT" | "OTM" | "Respaldo";
 
 export type TemplateStatus = "draft" | "published" | "archived";
 

@@ -51,7 +51,7 @@ describe('print page contract', () => {
         projectId: 'p1',
         nombre: 'Obra Test',
         cliente: null,
-        tipoObra: 'Tipo A',
+        tipoObra: 'SPLIT',
         fechaInicioGlobal: '2026-04-06',
         vigenciaTexto: null,
       },

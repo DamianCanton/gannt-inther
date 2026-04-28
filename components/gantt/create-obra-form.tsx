@@ -148,13 +148,13 @@ export function CreateObraForm({ action, disabled = false, onSuccess }: CreateOb
           <Select
             id="obra-tipo"
             name="tipoObra"
-            defaultValue="Tipo A"
+            defaultValue="SPLIT"
             disabled={isPending || disabled}
             className="h-12 rounded-xl border-slate-200 bg-white text-[14px] shadow-sm focus-visible:border-accent focus-visible:ring-accent/40"
           >
-            <option value="Tipo A">Tipo A</option>
-            <option value="Tipo B">Tipo B</option>
-            <option value="Tipo C">Tipo C</option>
+            <option value="SPLIT">SPLIT</option>
+            <option value="OTM">OTM</option>
+            <option value="Respaldo">Respaldo</option>
           </Select>
         </div>
 

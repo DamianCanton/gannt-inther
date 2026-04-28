@@ -62,7 +62,7 @@ describe('/obras route integration', () => {
         projectId: 'p1',
         nombre: 'Obra Norte',
         cliente: null,
-        tipoObra: 'Tipo A',
+        tipoObra: 'SPLIT',
         fechaInicioGlobal: '2026-04-01',
         vigenciaTexto: null,
         taskCount: 5,

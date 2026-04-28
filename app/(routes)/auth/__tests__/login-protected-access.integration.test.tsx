@@ -69,7 +69,7 @@ vi.mock('@/lib/supabase/server', () => ({
                     id: 'o1',
                     nombre: 'Obra Norte',
                     project_id: 'p1',
-                    tipo_obra: 'Tipo A',
+                    tipo_obra: 'SPLIT',
                     fecha_inicio_global: '2026-04-01',
                     vigencia_texto: null,
                     tareas: [{ count: 3 }],
