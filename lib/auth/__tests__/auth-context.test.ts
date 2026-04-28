@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { requireAuthContext } from '@/lib/auth/auth-context'
+import { requireAuthContext, requireAuthenticatedUser } from '@/lib/auth/auth-context'
 
 const { getUserMock, membershipBuilder } = vi.hoisted(() => ({
   getUserMock: vi.fn(),
@@ -81,6 +81,28 @@ describe('requireAuthContext', () => {
     getUserMock.mockResolvedValue({ data: { user: null }, error: null })
 
     await expect(requireAuthContext()).rejects.toMatchObject({
+      code: 'UNAUTHENTICATED',
+    })
+  })
+})
+
+describe('requireAuthenticatedUser', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('returns only user identity when session exists', async () => {
+    getUserMock.mockResolvedValue({ data: { user: { id: 'u-auth' } }, error: null })
+
+    const context = await requireAuthenticatedUser()
+
+    expect(context).toEqual({ userId: 'u-auth' })
+  })
+
+  it('throws UNAUTHENTICATED when user session does not exist', async () => {
+    getUserMock.mockResolvedValue({ data: { user: null }, error: null })
+
+    await expect(requireAuthenticatedUser()).rejects.toMatchObject({
       code: 'UNAUTHENTICATED',
     })
   })

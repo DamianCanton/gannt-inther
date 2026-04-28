@@ -16,6 +16,8 @@ function formatDate(value: string | null | undefined): string | null {
 
 type ProfileRow = {
   display_name: string
+  global_role: string
+  is_active: boolean
 }
 
 export default async function PerfilPage() {
@@ -28,11 +30,12 @@ export default async function PerfilPage() {
 
   const { data: profileData } = await supabase
     .from('profiles')
-    .select('display_name')
+    .select('display_name, global_role, is_active')
     .eq('user_id', userData.user.id)
     .maybeSingle<ProfileRow>()
 
   const displayName = profileData?.display_name ?? ''
+  const isAdmin = profileData?.is_active === true && profileData?.global_role === 'admin'
 
   return (
     <PerfilPageClient
@@ -40,6 +43,7 @@ export default async function PerfilPage() {
       createdAt={formatDate(userData.user.created_at) ?? 'Sin fecha'}
       lastSignInAt={formatDate(userData.user.last_sign_in_at)}
       displayName={displayName}
+      isAdmin={isAdmin}
     />
   )
 }

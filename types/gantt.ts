@@ -112,6 +112,24 @@ export interface PrintTaskPayload {
   fechaFin: IsoDate;
 }
 
+export interface ObraMembership {
+  id: Uuid;
+  userId: Uuid;
+  obraId: Uuid;
+  role: 'viewer' | 'editor';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserProfile {
+  userId: Uuid;
+  displayName: string;
+  globalRole: 'member' | 'admin';
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ============================================================
 // Template types
 // ============================================================
