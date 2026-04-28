@@ -72,7 +72,7 @@ describe('interactive gantt integration', () => {
     )
 
     expect(screen.getByRole('button', { name: /Volver a obras/i })).toBeTruthy()
-    expect(screen.getByRole('button', { name: '+ Nueva tarea' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Nueva tarea' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Exportar' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Días' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Semanas' })).toBeTruthy()
@@ -93,7 +93,7 @@ describe('interactive gantt integration', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: '+ Nueva tarea' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Nueva tarea' }))
     expect(screen.getByRole('heading', { name: 'Nueva tarea' })).toBeTruthy()
     expect(screen.getByLabelText('Nombre')).toBeTruthy()
   })
@@ -166,7 +166,7 @@ describe('interactive gantt integration', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: '+ Nueva tarea' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Nueva tarea' }))
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Terminaciones' } })
     fireEvent.change(screen.getByLabelText('Duración (días hábiles)'), { target: { value: '2' } })
     fireEvent.click(screen.getByRole('button', { name: 'Crear tarea' }))
@@ -236,7 +236,7 @@ describe('interactive gantt integration', () => {
     )
 
     expect(screen.getByText('Todavía no hay tareas cargadas.')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: '+ Nueva tarea' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Nueva tarea' }))
     fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'Primera tarea' } })
     fireEvent.click(screen.getByRole('button', { name: 'Crear tarea' }))
 

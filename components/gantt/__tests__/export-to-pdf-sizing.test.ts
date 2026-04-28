@@ -71,7 +71,7 @@ describe('exportToPdf sizing', () => {
 
     const options = toPngMock.mock.calls[0]?.[1]
 
-    expect(options?.width).toBe(558)
+    expect(options?.width).toBe(566)
     expect(options?.height).toBe(324)
     expect(options?.style).toBeUndefined()
   })

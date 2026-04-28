@@ -3,7 +3,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Home, HardHat, User, LogOut, ArrowLeft, Menu, X } from 'lucide-react';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useTransition } from 'react';
+
+import { signout } from '@/lib/actions/perfil';
 
 const links = [
   { href: '/obras', label: 'Obras', icon: Home },
@@ -19,6 +21,7 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const prevPathnameRef = useRef(pathname);
+  const [isSigningOut, startSigningOut] = useTransition();
 
   const isLinkActive = useCallback((href: string) => {
     if (!pathname) return false;
@@ -103,11 +106,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </button>
 
           <button
-            onClick={() => (window.location.href = '/auth/login')}
+            onClick={() => {
+              startSigningOut(() => {
+                void signout();
+              });
+            }}
+            disabled={isSigningOut}
             className="flex w-full items-center gap-3 px-3 py-2.5 rounded-md text-white/80 hover:bg-red-500/20 hover:text-red-300 transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
           >
             <LogOut size={20} />
-            Cerrar sesión
+            {isSigningOut ? 'Cerrando sesión...' : 'Cerrar sesión'}
           </button>
         </div>
       </aside>
