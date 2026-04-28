@@ -1,21 +1,22 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useFormState, useFormStatus } from 'react-dom'
-
-import { changePassword, signout, updateProfile } from '@/lib/actions/perfil'
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Dialog } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { changePassword, signout, updateProfile } from '@/lib/actions/perfil'
 
 interface PerfilPageClientProps {
   email: string
   createdAt: string
   lastSignInAt: string | null
   displayName: string
+  isAdmin?: boolean
 }
 
 function SubmitButton({ label }: { label: string }) {
@@ -28,7 +29,7 @@ function SubmitButton({ label }: { label: string }) {
   )
 }
 
-export function PerfilPageClient({ email, createdAt, lastSignInAt, displayName }: PerfilPageClientProps) {
+export function PerfilPageClient({ email, createdAt, lastSignInAt, displayName, isAdmin = false }: PerfilPageClientProps) {
   const router = useRouter()
   const [profileOpen, setProfileOpen] = useState(false)
   const [passwordOpen, setPasswordOpen] = useState(false)
@@ -108,6 +109,14 @@ export function PerfilPageClient({ email, createdAt, lastSignInAt, displayName }
             <Button type="button" variant="secondary" onClick={() => setPasswordOpen(true)}>
               Cambiar contraseña
             </Button>
+            {isAdmin ? (
+              <Link
+                href="/perfil/admin"
+                className="inline-flex items-center rounded bg-gray-200 px-4 py-2 text-base font-medium text-gray-900 transition-colors hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              >
+                Panel de administración
+              </Link>
+            ) : null}
             <Button type="button" variant="ghost" onClick={() => void signout()}>
               Cerrar sesión
             </Button>

@@ -9,7 +9,8 @@ import {
   type TaskMutationErrorCode,
 } from '@/lib/domain/gantt-crud-service'
 import { createScheduleWithDetails } from '@/lib/gantt-scheduler'
-import { AuthContextError, requireAuthContext } from '@/lib/auth/auth-context'
+import { AuthContextError } from '@/lib/auth/auth-context'
+import { ensureObraAccess } from '@/lib/auth/guards'
 import { GanttRepo, RepoAccessError } from '@/lib/repositories/gantt-repo'
 import { createServerClient } from '@/lib/supabase/server'
 import type { Uuid } from '@/types/gantt'
@@ -78,7 +79,7 @@ export async function mutateTask(input: MutateTaskInput): Promise<GanttMutationR
   const service = new GanttCrudService()
 
   try {
-    const auth = await requireAuthContext()
+    const auth = await ensureObraAccess(input.obraId)
     const currentSchedule = await repo.getObraSchedule({
       projectId: auth.projectId,
       obraId: input.obraId,
@@ -125,6 +126,10 @@ export async function mutateTask(input: MutateTaskInput): Promise<GanttMutationR
 
     if (error instanceof AuthContextError && error.code === 'NO_PROJECT_MEMBERSHIP') {
       return { error: { code: 'NO_PROJECT_MEMBERSHIP', message: error.message } }
+    }
+
+    if (error instanceof AuthContextError && error.code === 'FORBIDDEN_OR_NOT_FOUND') {
+      return { error: { code: 'FORBIDDEN_OR_NOT_FOUND', message: error.message } }
     }
 
     if (error instanceof RepoAccessError) {

@@ -2,14 +2,13 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, HardHat, User, LogOut, ArrowLeft, Menu, X } from 'lucide-react';
+import { Home, User, LogOut, ArrowLeft, Menu, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useTransition } from 'react';
 
 import { signout } from '@/lib/actions/perfil';
 
 const links = [
   { href: '/obras', label: 'Obras', icon: Home },
-  { href: '/admin/templates', label: 'Tipos de Obra', icon: HardHat },
   { href: '/perfil', label: 'Perfil', icon: User },
 ];
 
@@ -94,6 +93,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               </Link>
             );
           })}
+
         </nav>
 
         <div className="p-4 border-t border-white/10 space-y-2">

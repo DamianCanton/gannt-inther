@@ -35,7 +35,6 @@ describe('Sidebar', () => {
     render(<Sidebar isOpen={true} onClose={vi.fn()} />);
 
     expect(screen.getByText('Obras')).toBeTruthy();
-    expect(screen.getByText('Tipos de Obra')).toBeTruthy();
     expect(screen.getByText('Perfil')).toBeTruthy();
   });
 

@@ -3,6 +3,7 @@ import { createServerClient } from '@/lib/supabase/server'
 export type AuthContextErrorCode =
   | 'UNAUTHENTICATED'
   | 'NO_PROJECT_MEMBERSHIP'
+  | 'FORBIDDEN'
   | 'FORBIDDEN_OR_NOT_FOUND'
 
 export class AuthContextError extends Error {
@@ -20,22 +21,22 @@ export interface AuthContext {
   projectId: string
 }
 
+export interface AuthenticatedUserContext {
+  userId: string
+}
+
 type MembershipRow = {
   project_id: string
 }
 
 export async function requireAuthContext(): Promise<AuthContext> {
+  const userContext = await requireAuthenticatedUser()
   const supabase = createServerClient()
-  const { data: userData, error: userError } = await supabase.auth.getUser()
-
-  if (userError || !userData.user) {
-    throw new AuthContextError('UNAUTHENTICATED', 'Debés iniciar sesión para continuar.')
-  }
 
   const { data: memberships, error: membershipError } = await supabase
     .from('project_memberships')
     .select('project_id')
-    .eq('user_id', userData.user.id)
+    .eq('user_id', userContext.userId)
     .order('created_at', { ascending: true })
     .order('project_id', { ascending: true })
     .returns<MembershipRow[]>()
@@ -56,7 +57,18 @@ export async function requireAuthContext(): Promise<AuthContext> {
   }
 
   return {
-    userId: userData.user.id,
+    userId: userContext.userId,
     projectId,
   }
+}
+
+export async function requireAuthenticatedUser(): Promise<AuthenticatedUserContext> {
+  const supabase = createServerClient()
+  const { data: userData, error: userError } = await supabase.auth.getUser()
+
+  if (userError || !userData.user) {
+    throw new AuthContextError('UNAUTHENTICATED', 'Debés iniciar sesión para continuar.')
+  }
+
+  return { userId: userData.user.id }
 }

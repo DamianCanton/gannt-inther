@@ -34,11 +34,13 @@ vi.mock('@/components/perfil/perfil-page-client', () => ({
     createdAt,
     lastSignInAt,
     displayName,
+    isAdmin,
   }: {
     email: string
     createdAt: string
     lastSignInAt: string | null
     displayName: string
+    isAdmin?: boolean
   }) => (
     <section>
       <h1>Perfil</h1>
@@ -46,6 +48,7 @@ vi.mock('@/components/perfil/perfil-page-client', () => ({
       <p>{displayName}</p>
       <p>{createdAt}</p>
       <p>{lastSignInAt ?? 'Sin acceso reciente'}</p>
+      {isAdmin ? <p>Admin</p> : null}
     </section>
   ),
 }))
@@ -89,6 +92,18 @@ describe('/perfil route integration', () => {
     expect(screen.getByText('user@example.com')).toBeTruthy()
     expect(screen.getByText('Juan Perez')).toBeTruthy()
     expect(eqMock).toHaveBeenCalledWith('user_id', 'u1')
+  })
+
+  it('shows admin access button when profile is admin', async () => {
+    maybeSingleMock.mockResolvedValueOnce({
+      data: { display_name: 'Juan Perez', global_role: 'admin', is_active: true },
+      error: null,
+    })
+
+    const page = await PerfilPage()
+    render(page)
+
+    expect(screen.getByText('Admin')).toBeTruthy()
   })
 
   it('redirects anonymous users to /auth/login', async () => {

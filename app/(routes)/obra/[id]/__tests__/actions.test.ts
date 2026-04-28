@@ -6,22 +6,18 @@ import { RepoAccessError } from '@/lib/repositories/gantt-repo'
 import type { ObraSchedule } from '@/types/gantt'
 
 const {
-  requireAuthContextMock,
+  ensureObraAccessMock,
   getObraScheduleMock,
   mutateTaskGraphAtomicMock,
 } = vi.hoisted(() => ({
-  requireAuthContextMock: vi.fn(),
+  ensureObraAccessMock: vi.fn(),
   getObraScheduleMock: vi.fn<() => Promise<ObraSchedule>>(),
   mutateTaskGraphAtomicMock: vi.fn(),
 }))
 
-vi.mock('@/lib/auth/auth-context', async () => {
-  const actual = await vi.importActual('@/lib/auth/auth-context')
-  return {
-    ...actual,
-    requireAuthContext: requireAuthContextMock,
-  }
-})
+vi.mock('@/lib/auth/guards', () => ({
+  ensureObraAccess: ensureObraAccessMock,
+}))
 
 vi.mock('@/lib/supabase/server', () => ({
   createServerClient: () => ({ mocked: true }),
@@ -71,7 +67,7 @@ describe('saveTaskChange action', () => {
   })
 
   it('infers project scope from auth context (ignores client project id)', async () => {
-    requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
+    ensureObraAccessMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
     getObraScheduleMock.mockResolvedValue(createScheduleFixture())
     mutateTaskGraphAtomicMock.mockResolvedValue('t1')
 
@@ -96,7 +92,7 @@ describe('saveTaskChange action', () => {
   })
 
   it('returns UNAUTHENTICATED when auth context fails', async () => {
-    requireAuthContextMock.mockRejectedValue(
+    ensureObraAccessMock.mockRejectedValue(
       new AuthContextError('UNAUTHENTICATED', 'session missing')
     )
 
@@ -115,7 +111,7 @@ describe('saveTaskChange action', () => {
   })
 
   it('returns FORBIDDEN_OR_NOT_FOUND when obra is outside user scope', async () => {
-    requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
+    ensureObraAccessMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
     getObraScheduleMock.mockRejectedValue(new RepoAccessError('forbidden'))
 
     const result = await saveTaskChange({
@@ -132,8 +128,46 @@ describe('saveTaskChange action', () => {
     })
   })
 
+  it('returns NO_PROJECT_MEMBERSHIP when auth context indicates inactive/no membership', async () => {
+    ensureObraAccessMock.mockRejectedValue(
+      new AuthContextError('NO_PROJECT_MEMBERSHIP', 'membership missing')
+    )
+
+    const result = await saveTaskChange({
+      obraId: 'o1',
+      taskId: 't1',
+      nombre: 'Tarea 1',
+      duracionDias: 2,
+      dependeDeId: null,
+    })
+
+    expect(result.error).toEqual({
+      code: 'NO_PROJECT_MEMBERSHIP',
+      message: 'membership missing',
+    })
+  })
+
+  it('returns FORBIDDEN_OR_NOT_FOUND when auth context rejects direct obra access', async () => {
+    ensureObraAccessMock.mockRejectedValue(
+      new AuthContextError('FORBIDDEN_OR_NOT_FOUND', 'obra forbidden')
+    )
+
+    const result = await saveTaskChange({
+      obraId: 'o1',
+      taskId: 't1',
+      nombre: 'Tarea 1',
+      duracionDias: 2,
+      dependeDeId: null,
+    })
+
+    expect(result.error).toEqual({
+      code: 'FORBIDDEN_OR_NOT_FOUND',
+      message: 'obra forbidden',
+    })
+  })
+
   it('does not trust client obra scope in update when requested obra is out of membership scope', async () => {
-    requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
+    ensureObraAccessMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
     getObraScheduleMock.mockRejectedValue(new RepoAccessError('forbidden'))
 
     const result = await mutateTask({
@@ -153,7 +187,7 @@ describe('saveTaskChange action', () => {
   })
 
   it('handles create intent through unified mutateTask action', async () => {
-    requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
+    ensureObraAccessMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
     const before = createScheduleFixture('p-auth', 'o1')
     const after: ObraSchedule = {
       ...before,
@@ -195,7 +229,7 @@ describe('saveTaskChange action', () => {
   })
 
   it('does not forward hierarchy fields to create mutation payload', async () => {
-    requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
+    ensureObraAccessMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
     const before = createScheduleFixture('p-auth', 'o1')
     const after = createScheduleFixture('p-auth', 'o1')
 
@@ -220,7 +254,7 @@ describe('saveTaskChange action', () => {
   })
 
   it('handles delete intent through unified mutateTask action', async () => {
-    requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
+    ensureObraAccessMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
     const before: ObraSchedule = {
       ...createScheduleFixture('p-auth', 'o1'),
       tasks: [
@@ -285,7 +319,7 @@ describe('saveTaskChange action', () => {
   })
 
   it('returns ATOMIC_WRITE_FAILED and stops after rpc failure', async () => {
-    requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
+    ensureObraAccessMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
     getObraScheduleMock.mockResolvedValue(createScheduleFixture())
     mutateTaskGraphAtomicMock.mockRejectedValue(new Error('database unavailable'))
 
@@ -305,8 +339,46 @@ describe('saveTaskChange action', () => {
     expect(mutateTaskGraphAtomicMock).toHaveBeenCalledTimes(1)
   })
 
+  it('maps legacy scheduler invalid duration errors as VALIDATION_ERROR', async () => {
+    ensureObraAccessMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
+    getObraScheduleMock.mockResolvedValue(createScheduleFixture())
+    mutateTaskGraphAtomicMock.mockRejectedValue(new Error('INVALID_DURATION:t1:0'))
+
+    const result = await saveTaskChange({
+      obraId: 'o1',
+      taskId: 't1',
+      nombre: 'Tarea 1',
+      duracionDias: 0,
+      dependeDeId: null,
+    })
+
+    expect(result.error).toEqual({
+      code: 'VALIDATION_ERROR',
+      message: 'La tarea no cumple con las reglas de validación.',
+    })
+  })
+
+  it('maps unknown non-Error exceptions to generic ATOMIC_WRITE_FAILED message', async () => {
+    ensureObraAccessMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
+    getObraScheduleMock.mockResolvedValue(createScheduleFixture())
+    mutateTaskGraphAtomicMock.mockRejectedValue('boom')
+
+    const result = await saveTaskChange({
+      obraId: 'o1',
+      taskId: 't1',
+      nombre: 'Tarea 1',
+      duracionDias: 2,
+      dependeDeId: null,
+    })
+
+    expect(result.error).toEqual({
+      code: 'ATOMIC_WRITE_FAILED',
+      message: 'No se pudo guardar el cambio.',
+    })
+  })
+
   it('recalculates schedule from canonical dependencies when persisted dependency rows are stale', async () => {
-    requireAuthContextMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
+    ensureObraAccessMock.mockResolvedValue({ userId: 'u1', projectId: 'p-auth' })
 
     const current: ObraSchedule = {
       ...createScheduleFixture('p-auth', 'o1'),

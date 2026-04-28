@@ -1,0 +1,41 @@
+# Verification Report — usuarios-membresias-granulares
+
+- Date: 2026-04-27
+- Merge note: no previous `verify-report` artifact was present at this path, so this report initializes the merged record.
+
+status: partial
+verdict: El batch dejó bien cubiertos los contratos de acceso/admin/UI y mejoró coverage, pero el gap RLS/performance quedó sólo parcialmente cerrado porque la suite runtime real quedó skipped en este entorno y sigue faltando evidencia de planner/EXPLAIN.
+topic_key: sdd/usuarios-membresias-granulares/verify-report
+
+findings:
+  - WARNING: La suite `supabase/__tests__/usuarios-membresias-granulares.runtime.test.ts` no pudo validar allow/deny real contra Supabase porque `ENABLE_SUPABASE_RLS_RUNTIME_TESTS`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` estaban unset; Vitest reportó `5 tests | 4 skipped`.
+  - WARNING: El gap de performance sigue parcialmente abierto. La migración y el test contractual validan predicados indexables (`pm.user_id + pm.project_id`, `om.user_id + om.obra_id + role`), pero `DOCS/rls-runtime-validation.md` confirma que todavía no existe infraestructura local/CI para `EXPLAIN` o benchmark planner.
+  - WARNING: No encontré los artifacts pedidos en `sdd/usuarios-membresias-granulares/{spec,design,tasks,apply-progress}`; la re-verificación de cumplimiento contra SDD quedó limitada a código, tests y documentación efectiva del change.
+
+evidence:
+  - `npm test -- --run` → `53 passed`, `280 passed | 4 skipped`, exit 0.
+  - `npm run type-check` → `tsc --noEmit` sin errores.
+  - `npm run lint` → `next lint` sin warnings ni errors.
+  - `npm test -- --run --coverage` → total `68.78%` lines / `76.18%` branches / `68.34%` funcs.
+  - Coverage de archivos ejecutables del change: `lib/supabase/admin.ts 100/100`, `lib/auth/guards.ts 91.66/100`, `lib/auth/auth-context.ts 88.88/91.66`, `app/(routes)/obra/[id]/actions.ts 86.66/91.66`, `app/actions/users.ts 84.52/51.47`, `app/(routes)/admin/usuarios/page.tsx 90.47/71.42`, `app/(routes)/admin/usuarios/admin-users-client.tsx 83.22/72` (líneas/branches). Promedio líneas aprox. `89.34%` en archivos ejecutables del batch.
+  - `types/gantt.ts` figura con `0%` runtime coverage porque agrega contratos de tipos; su respaldo real viene por `types/__tests__/admin-memberships-contract.test.ts` y por type-check, no por instrumentación de ejecución.
+- `supabase/migrations/20260429_usuarios_membresias_granulares.sql` implementa `current_user_is_active()`, `can_access_obra_read()` y `can_access_obra_write()` con paths indexables sobre `project_memberships` y `obra_memberships`.
+  - `supabase/__tests__/usuarios-membresias-granulares.migration.test.ts` refuerza el contrato SQL: tabla `obra_memberships`, políticas RLS, columnas `profiles.is_active/global_role` y predicados críticos alineados a índices.
+  - `lib/auth/guards.ts` ahora separa `requireAuthenticatedUser()`, `requireAdmin()` y `ensureObraAccess(obraId)`, y `ensureObraAccess` resuelve acceso leyendo `obras.project_id` vía RLS para permitir acceso sólo por obra sin requerir membresía de proyecto.
+  - `lib/auth/__tests__/guards-obra-access.test.ts` cubre obra-only, project-only, ambos y bloqueo por fila oculta/inactiva.
+  - `supabase/__tests__/usuarios-membresias-granulares.runtime.test.ts` modela exactamente los escenarios runtime pedidos: obra-only read, project-member read, viewer/editor write y inactive user blocked; en este entorno quedaron definidos pero no ejecutados por faltar envs.
+  - `lib/auth/guards.ts`, `app/actions/users.ts`, `app/(routes)/admin/usuarios/page.tsx` y `app/(routes)/admin/usuarios/admin-users-client.tsx` mantienen el contrato de `requireAdmin()` para acciones server/UI de administración.
+  - `app/actions/__tests__/users.test.ts`, `lib/auth/__tests__/guards-admin.test.ts`, `app/(routes)/admin/usuarios/__tests__/page.integration.test.tsx` y `app/(routes)/admin/usuarios/__tests__/admin-users-client.test.tsx` prueban guardas admin, asignación de obra/proyecto, soft deactivate y estados UI.
+  - `app/(routes)/obra/[id]/actions.ts` dejó de depender de `requireAuthContext()` y usa `ensureObraAccess(input.obraId)`, evitando confiar scope cliente/proyecto; `app/(routes)/obra/[id]/__tests__/actions.test.ts` cubre `FORBIDDEN_OR_NOT_FOUND`, `NO_PROJECT_MEMBERSHIP` y cross-scope denial.
+
+next_steps:
+  - Ejecutar `ENABLE_SUPABASE_RLS_RUNTIME_TESTS=true npm test -- --run supabase/__tests__/usuarios-membresias-granulares.runtime.test.ts` en un entorno con `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` reales para cerrar la evidencia funcional runtime.
+  - Incorporar infraestructura local/CI de Supabase/Postgres y agregar asserts de `EXPLAIN`/planner para cerrar de verdad el gap de performance, no sólo el contractual.
+  - Restaurar o persistir `spec`, `design`, `tasks` y `apply-progress` bajo `sdd/usuarios-membresias-granulares/` para recuperar trazabilidad SDD completa en próximas verificaciones.
+
+## Focused assessment
+
+- RLS/performance gap: **partially closed**.
+- Acceso sólo por obra: **structurally preserved and test-modeled**, pero **no revalidado runtime real en esta máquina**.
+- `requireAdmin()` / actions / UI / tipos: **consistentes con el batch y cubiertos por tests unit/integration**.
+- Tests contractuales y coverage: **sí, reforzados**; el batch agrega tests de migración, runtime opt-in, guards, admin service-role, acciones admin, UI admin y contratos de tipos.
